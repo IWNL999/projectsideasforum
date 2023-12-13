@@ -41,8 +41,8 @@
                     <a href="{{ url_for('logout') }}" class="btn btn-outline-light">Выйти</a>
                     {% else %}
                     <!-- Если пользователь не аутентифицирован, показываем кнопки Войти и Зарегистрироваться -->
-                    <a href="{{ url_for('login') }}" class="btn btn-outline-light me-2">Войти</a>
-                    <a href="{{ url_for('registration') }}" class="btn btn-warning">Зарегистрироваться</a>
+                    <a href="{{ url_for('main.login') }}" class="btn btn-outline-light me-2">Войти</a>
+                    <a href="{{ url_for('main.registration') }}" class="btn btn-warning">Зарегистрироваться</a>
                     {% endif %}
                     </div>
                 </div>

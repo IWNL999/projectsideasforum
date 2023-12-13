@@ -166,3 +166,16 @@ def login():
                 session['email'] = user_1.email
                 return render_template('user_login.html')
 
+
+
+def create_tables():
+    try:
+        db.create_all()
+    except OperationalError as e:
+        print(f"Error creating tables: {e}")
+
+
+#if __name__ == '__main__':
+#    app.run(debug=True)
+
+from sqlalchemy.exc import OperationalError, IntegrityError
