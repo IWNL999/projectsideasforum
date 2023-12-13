@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}
+    Выполнен вход
+{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+    <h1>Здравствуйте, {{ login }}!</h1>
+    <p>Это страница вашего профиля.</p>
+    <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+{% endblock %}
