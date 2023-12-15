@@ -8,9 +8,10 @@ bcrypt = Bcrypt()
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 
+
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://projideasforum:projideasforumpass@localhost/maindb'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:logachevmaksim07@localhost/users_1'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = 'dfhdhfwqhjggx3463n32462h'
     UPLOAD_FOLDER = 'static/avatars'
@@ -22,3 +23,10 @@ def create_app():
     from app.main import bp
     app.register_blueprint(bp)
     return app
+
+
+def create_tables():
+    try:
+        db.create_all()
+    except OperationalError as e:
+        print(f"Error creating tables: {e}")

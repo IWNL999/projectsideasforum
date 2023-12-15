@@ -1,5 +1,5 @@
 import os
-from flask import render_template, url_for, request, redirect, flash, current_app
+from flask import render_template, url_for, request, redirect, flash, current_app, g
 from sqlalchemy.exc import IntegrityError
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
@@ -8,12 +8,22 @@ from app.models import User, Article
 from app.main import bp
 
 
-
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
+@bp.before_request
+def inject_user():
+    if current_user.is_authenticated:
+        g.current_user = current_user
+        g.current_user_avatar = (
+            url_for('static', filename=f'avatars/{current_user.file}')
+            if current_user.file else url_for('static', filename='avatars/default-avatar.png')
+        )
+    else:
+        g.current_user = None
+        g.current_user_avatar = url_for('static', filename='avatars/default-avatar.png')
 
 
 @bp.route('/')
@@ -103,6 +113,13 @@ def post_update(id):
             return "При редактировании статьи произошла ошибка"
     else:
         return render_template("post_update.html", article=article)
+
+
+@bp.route('/your-posts', methods=['GET', 'POST'])
+@login_required
+def your_posts():
+    articles = Article.query.filter_by(user_id=current_user.id).order_by(Article.date.desc()).all()
+    return render_template("your-posts.html", articles=articles)
 
 
 @bp.route("/login", methods=["POST", "GET"])
@@ -203,16 +220,7 @@ def signup():
     return render_template('signup.html')
 
 
-@bp.route('/your-posts', methods=['GET', 'POST'])
-@login_required
-def your_posts():
-    articles = Article.query.filter_by(user_id=current_user.id).order_by(Article.date.desc()).all()
-    return render_template("your-posts.html", articles=articles)
-
-
 @bp.route('/profile/<int:user_id>')
 def profile(user_id):
     user = User.query.get_or_404(user_id)
     return render_template('profile.html', user=user)
-
-

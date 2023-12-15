@@ -59,6 +59,7 @@ form {
     height: 64px;
     object-fit: cover;
     border-radius: 50%;
+    border: 2px solid #FFC700;
 }
 
 a {

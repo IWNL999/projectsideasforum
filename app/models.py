@@ -5,6 +5,7 @@ from flask_login import UserMixin
 from flask_bcrypt import check_password_hash
 from sqlalchemy.exc import OperationalError
 
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users1'
     id = db.Column(db.Integer, primary_key=True)
