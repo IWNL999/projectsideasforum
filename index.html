@@ -1,0 +1,50 @@
+<!-- index.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}
+    Главная страница
+{% endblock %}
+
+{% block content %}
+
+    <main>
+        <div class="last-posts wrapper">
+
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                <ul class="flashes">
+                  {% for message in messages %}
+                    <li>{{ message }}</li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+
+            <div class="container my-3 p-3 bg-body rounded shadow-sm">
+                <h6 class="border-bottom pb-2 mb-0">Последние посты</h6>
+
+                {% for post in latest_posts %}
+                    <div class="d-flex text-body-secondary pt-3">
+                        {% if post.author.file %}
+                            <a href='/users/{{ post.author.id }}'>
+                                <img class="img-avatar" src="{{ post.author.avatar_url }}" alt="{{ post.author.login }} Avatar">
+                            </a>
+                        {% else %}
+                            <a href='/users/{{ post.author.id }}'>
+                                <img class="img-avatar" src="{{ post.author.avatar_url }}" alt="Default Avatar">
+                            </a>
+                        {% endif %}
+
+                        <p class="textpr pb-3 mb-0 small lh-sm border-bottom ">
+                            <span class="btn btnusername d-flex d-block text-gray-dark">@{{ post.author.login }}</span>
+                            {{ post.title }}
+                            <a href='/posts/{{ post.id }}' class="text-details" data-content="Подробнее">Подробнее</a>
+                        </p>
+                    </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </main>
+{% endblock %}
