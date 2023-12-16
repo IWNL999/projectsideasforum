@@ -3,8 +3,20 @@
     Вход
 {% endblock %}
 {% block content %}
+
+
     <div class="container mt-4">
         <h1>Войти в аккаунт</h1>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul class="flashes">
+              {% for message in messages %}
+                <li>{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
 
         <form action="{{ url_for('main.login') }}" method="POST">
             <input type="text" class="form-control" name="login" id="login" placeholder="Введите логин или email"><br>
