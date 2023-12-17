@@ -1,4 +1,6 @@
 import os
+import uuid
+
 from flask import render_template, url_for, request, redirect, flash, current_app, g
 from sqlalchemy.exc import IntegrityError
 from flask_login import login_user, login_required, logout_user, current_user
@@ -80,37 +82,40 @@ def create_article():
 def post_delete(id):
     article = Article.query.get_or_404(id)
 
+    # Проверяем, что пользователь, удаляющий пост, является его автором
+    if article.user_id != current_user.id:
+        flash('У вас недостаточно прав для удаления чужих постов', 'error')
+        return render_template("post_detail.html", article=article)
+
     try:
-        # Добавил проверку, что пользователь, удаляющий пост, является его автором
-        if article.user_id == current_user.id:
-            db.session.delete(article)
-            db.session.commit()
-            return redirect('/posts')
-        else:
-            flash('You do not have permission to delete this post', 'error')
-            return redirect('/posts')
+        db.session.delete(article)
+        db.session.commit()
+        flash('Статья успешно удалена', 'success')
+        return render_template("post_detail.html", article=article)
     except:
-        return "При удалении статьи произошла ошибка"
+        flash("При удалении статьи произошла ошибка", 'error')
+        return render_template("post_detail.html", article=article)
 
 
 @bp.route('/posts/<int:id>/update', methods=['POST', 'GET'])
 @login_required
 def post_update(id):
     article = Article.query.get(id)
+    # Проверяем, что пользователь, редактирующий пост, является его автором
     if article.user_id != current_user.id:
-        flash('You do not have permission to edit this post', 'error')
-        return redirect('/posts')
-
+        flash('У вас недостаточно прав для редактирования чужих постов', 'error')
+        return render_template("post_detail.html", article=article)
     if request.method == "POST":
         article.title = request.form['title']
         article.intro = request.form['intro']
         article.text = request.form['text']
-
         try:
             db.session.commit()
-            return redirect('/posts')
+            flash('Статья успешно обновлена', 'success')
+            return render_template("post_detail.html", article=article)
         except:
-            return "При редактировании статьи произошла ошибка"
+            flash("При редактировании статьи произошла ошибка", 'error')
+            return render_template("post_detail.html", article=article)
     else:
         return render_template("post_update.html", article=article)
 
@@ -131,10 +136,10 @@ def login():
         user = User.query.filter((User.login == login_or_email) | (User.email == login_or_email)).first()
         if user and user.check_password(password):
             login_user(user)
-            flash('Login successful!', 'success')
-            return redirect(url_for('user_login', login=user.login))
+            flash('Вы успешно вошли в аккаунт!', 'success')
+            return redirect(url_for('main.user_login', login=user.login))
         else:
-            flash('Login or password is not correct', 'error')
+            flash('Логин или пароль не корректны', 'error')
     return render_template("login.html")
 
 
@@ -148,8 +153,8 @@ def user_login(login):
 @login_required
 def logout():
     logout_user()
-    flash('You have been logged out', 'info')
-    return redirect(url_for('login'))
+    flash('Вы вышли из своего аккаунта', 'info')
+    return redirect(url_for('main.login'))
 
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -165,22 +170,16 @@ def registration():
         login1 = request.form['login']
         password1 = request.form['password']
         email = request.form['email']
+        file = request.files.get('file')
+        # Устанавливаем filename на путь к вашему серому аватару
+        filename = 'static/avatars/default_avatar.jpg'
+        # Проверяем, предоставлен ли файл
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
 
-        # Проверяем, был ли файл отправлен с формой
-        if 'file' in request.files:
-            file = request.files['file']
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-            else:
-                # Обработка случая, когда файл не был передан или в недопустимом формате
-                flash("Invalid or missing file. Allowed formats: jpg, png")
-        else:
-            # Обработка случая, когда ключ 'file' отсутствует в запросе
-            flash("File not provided in the request.")
-
-        # Остальной код регистрации
         user = User(login=login1, password=password1, email=email, file=filename)
+
         try:
             user.set_password(password1)
             db.session.add(user)
@@ -203,18 +202,21 @@ def signup():
     login1 = request.form['login']
     password1 = request.form['password']
     email = request.form['email']
-    if 'file' in request.files:
-        file = request.files['file']
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-        else:
-            # Обработка случая, когда файл не был передан или в недопустимом формате
-            flash("Invalid or missing file. Allowed formats: jpg, png")
+    file = request.files.get('file')
+
+    if not file:
+        flash("File not provided in the request.", 'error')
+        return redirect(url_for('main.registration'))
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
     else:
-        # Обработка случая, когда ключ 'file' отсутствует в запросе
-        flash("File not provided in the request.")
-    user = User(login1, password1, email, file)
+        # Обработка случая, когда файл не был передан или в недопустимом формате
+        flash("Invalid or missing file. Allowed formats: jpg, png", 'error')
+        return redirect(url_for('main.registration'))
+
+    user = User(login=login1, password=password1, email=email, file=filename)
     db.session.add(user)
     db.session.commit()
     return render_template('signup.html')
