@@ -66,13 +66,9 @@ def create_article():
         text = request.form['text']
 
         article = Article(title=title, intro=intro, text=text, user_id=current_user.id)
-
-        try:
-            db.session.add(article)
-            db.session.commit()
-            return redirect('/posts')
-        except:
-            return "При добавлении статьи произошла ошибка"
+        db.session.add(article)
+        db.session.commit()
+        return redirect('/posts')
     else:
         return render_template("create-article.html")
 
