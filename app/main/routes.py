@@ -166,16 +166,25 @@ def registration():
         login1 = request.form['login']
         password1 = request.form['password']
         email = request.form['email']
-        file = request.files.get('file')
-        # Устанавливаем filename на путь к вашему серому аватару
-        filename = 'static/avatars/default_avatar.jpg'
-        # Проверяем, предоставлен ли файл
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
 
+        # Проверяем, был ли файл отправлен с формой
+        if 'file' in request.files:
+            file = request.files['file']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                file.save(file_path)
+            else:
+                # Обработка случая, когда файл не был передан или в недопустимом формате
+                flash("Invalid or missing file. Allowed formats: jpg, png")
+                file_path = None
+        else:
+            # Обработка случая, когда ключ 'file' отсутствует в запросе
+            flash("File not provided in the request.")
+            file_path = None
+
+        # Остальной код регистрации
         user = User(login=login1, password=password1, email=email, file=filename)
-
         try:
             user.set_password(password1)
             db.session.add(user)
@@ -198,21 +207,22 @@ def signup():
     login1 = request.form['login']
     password1 = request.form['password']
     email = request.form['email']
-    file = request.files.get('file')
+    file_path = None
 
-    if not file:
-        flash("File not provided in the request.", 'error')
-        return redirect(url_for('main.registration'))
-
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+    if 'file' in request.files:
+        file = request.files['file']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+        else:
+            # Обработка случая, когда файл не был передан или в недопустимом формате
+            flash("Invalid or missing file. Allowed formats: jpg, png")
     else:
-        # Обработка случая, когда файл не был передан или в недопустимом формате
-        flash("Invalid or missing file. Allowed formats: jpg, png", 'error')
-        return redirect(url_for('main.registration'))
+        # Обработка случая, когда ключ 'file' отсутствует в запросе
+        flash("File not provided in the request.")
 
-    user = User(login=login1, password=password1, email=email, file=filename)
+    user = User(login=login1, password=password1, email=email, file=file_path)
     db.session.add(user)
     db.session.commit()
     return render_template('signup.html')
