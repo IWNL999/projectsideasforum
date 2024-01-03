@@ -5,7 +5,19 @@
 {% endblock %}
 
 {% block content %}
+
 <div class="container mt-5 create rounded shadow-sm post_add">
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class="flashes">
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
     <h1>Добавление статьи</h1>
     <form  method="post">
         <input type="text" name="title" id="title" class="form-control" placeholder="Введите название"><br>

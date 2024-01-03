@@ -7,6 +7,15 @@
 {% block content %}
 <div class="container">
     <h1>Ваши посты на сайте</h1>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class="flashes">
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
 
     {% if articles|length > 0 %}
 
@@ -15,7 +24,7 @@
             <h2>{{ el.title }}</h2>
             <p>{{ el.intro }}</p>
             <p><b>Дата: {{ el.date.date() }}</b></p>
-            <a href="/your-posts/{{ el.id }} "class="btn btn-warning">Детальнее</a>
+            <a href="/posts/{{ el.id }} "class="btn btn-warning">Детальнее</a>
 
         </div>
         {% endfor %}
