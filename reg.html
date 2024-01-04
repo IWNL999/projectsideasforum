@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}
+Регистрация
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+<h1>Форма регистрации</h1>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+<form action="/signup" method="POST" enctype="multipart/form-data">
+    <input type="text" class="form-control" name="login" id="login" placeholder="Введите логин"><br>
+    <input type="password" class="form-control" name="password" id="password" placeholder="Введите пароль"><br>
+    <input type="password" class="form-control" name="pass2" id="pass2" placeholder="Введите пароль снова"><br>
+    <input type="text" class="mail form-control" name="email" id="email" placeholder="Введите почту"><br>
+    <label class="avatar2">аватар</label><br>
+    <input type="file" class="avatar form-control" name="file" id="file" ><br>
+    <button class="btn btn-warning" type="submit" href="/signup">Зарегистрировать</button>
+</form>
+</div>
+{% endblock %}
