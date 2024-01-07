@@ -1,13 +1,11 @@
 import os
-from flask import current_app
+from flask import current_app, render_template, flash, redirect, url_for, request
 from werkzeug.datastructures import FileStorage
-
 from app import db, bcrypt
 from werkzeug.utils import secure_filename
 from datetime import datetime
-from flask_login import UserMixin
+from flask_login import UserMixin, login_required, current_user
 from flask_bcrypt import check_password_hash
-
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
@@ -23,13 +21,14 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(60), nullable=False, unique=True)
     file = db.Column(db.String(255))
+    description = db.Column(db.String(255))
 
-    def __init__(self, login, password, email, file=None):
+    def __init__(self, login, password, email, file='default-avatar.png', description=''):
         self.login = login
         self.set_password(password)
         self.email = email
-        if file:
-            # Проверяем, является ли file объектом файла, прежде чем вызывать save_file
+        self.description = description
+        if file and file != 'default-avatar.png':
             if isinstance(file, FileStorage):
                 self.file = self.save_file(file)
             else:
@@ -40,10 +39,11 @@ class User(UserMixin, db.Model):
     def save_file(self, file):
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)  # Добавим 'avatars' к пути
+
             file.save(file_path)
             return filename  # Возвращаем только имя файла
-        return None
+        return Non
 
     def is_active(self):
         return True
@@ -60,7 +60,20 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password, password)
 
+    def profile_url(self):
+        return url_for('main.profile_by_id', user_id=self.id)
 
+    def get_avatar_url(self):
+        return url_for('static', filename=f'avatars/{self.file}')
+
+    def set_avatar_url(self, value):
+        # Можете добавить логику установки значения, если необходимо
+        pass
+
+    def avatar_url(self):
+        return url_for('static', filename=f'avatars/{self.file}') if self.file else url_for('static',
+                                                                                            filename='avatars/default'
+                                                                                                     '-avatar.png')
 
 
 class Article(db.Model):

@@ -3,19 +3,22 @@
     Выполнен вход
 {% endblock %}
 {% block content %}
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul class="flashes">
-      {% for message in messages %}
-        <li>{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
 
-    <h1>Здравствуйте, {{ login }}!</h1>
-    <p>Это страница вашего профиля.</p>
-    <a href="{{ url_for('main.logout') }}">Выйти из аккаунта</a>
+    <div class="container mt-4">
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul class="flashes">
+              {% for message in messages %}
+                <li>{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+
+    <h1>Это страница профиля {{ login }}</h1>
+    <img class="profile-avatar" src="{{ g.current_user_avatar }}" alt="User Avatar">
+    <a class="button quit" href="{{ url_for('main.logout') }}">Выйти из аккаунта</a>
     </div>
+
 {% endblock %}

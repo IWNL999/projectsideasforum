@@ -1,26 +1,51 @@
-.img-avatar {
-    width: 64px;
-    height: 64px;
-    object-fit: cover;
-    border-radius: 50%;
-}
 
 body {
-    background-color: #F0F0F0; /* Светло-серый цвет фона */
+    background-color: #E0E0E0; /* Светло-серый цвет фона */
+    height: 100%;
+    margin: 0;
+}
+
+.page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .btn-warning {
-    background-color: #FFC700;
+    background-color: #ffA500;/* был #FFC700*/
+    border-color: #f0f0f0; /* Цвет светло-серой границы при наведении */
+}
+
+.content {
+    flex: 1;
 }
 
 .btnorange {
-    background-color: #FFC700;
+    background-color: #ffA500;
+    border-color: #f0f0f0; /* Цвет светло-серой границы при наведении */
+}
+
+/* Общий стиль для кнопки */
+.button {
+  padding: 10px 20px;
+  background-color: #ffffff; /* Белый фон кнопки */
+  color: #ffA500; /* Оранжевый цвет текста кнопки */
+  border: 2px solid #ffA500; /* Оранжевый цвет границы кнопки */
+  border-radius: 5px; /* Закругление углов кнопки */
+  text-decoration: none; /* Убрать подчеркивание у текста кнопки */
+  display: inline-block;
+}
+
+/* При наведении добавляем светло-серый контур */
+.button:hover {
+  border-color: #b0b0b0; /* Цвет светло-серой границы при наведении */
 }
 
 .otpravit {
     margin-bottom: 15px;
 }
 
+/* регистрация */
 form {
     width: 500px;
 }
@@ -36,12 +61,7 @@ form {
 .mail {
     margin-bottom: 0px;
 }
-
-.polz_avatar {
-    margin-right: 10px;
-    height: 64px;
-    width: 156px;
-}
+/* регистрация */
 
 .alert-info {
     background-color: #CECECE;
@@ -59,7 +79,7 @@ form {
     height: 64px;
     object-fit: cover;
     border-radius: 50%;
-    border: 2px solid #FFC700;
+    border: 2px solid #ffA500;
 }
 
 a {
@@ -90,3 +110,96 @@ a:hover {
     margin-top: 50px;
 }
 
+.profile-avatar{
+    margin-left: 140px;
+    width: 128px;
+    height: 128px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #ffA500;
+}
+
+.button.quit {
+    position: absolute;
+    margin-top: 15px;
+    min-height: 47.2px;
+    width: 178px;
+    margin-left: 208px;
+    padding: 10px 20px;
+    background-color: #ffffff;
+    color: #ffA500;
+    border: 2px solid #ffA500;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.button.quit:hover {
+    border-color: #b0b0b0;
+}
+
+.button.profile-redact{
+    position: absolute;
+    margin-top: 15px;
+    min-height: 47.2px;
+    width: 178px;
+    margin-left: 15px;
+    padding: 5px 10px;
+    background-color: #ffffff;
+    color: #ffA500;
+    border: 2px solid #ffA500;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+    line-height: 1; /* Уменьшил значение line-height для уменьшения интервала между строками */
+    text-align: center; /* Выравнивание текста по центру */
+}
+
+.button.profile-redact:hover {
+    border-color: #b0b0b0;
+}
+
+.user-description {
+    margin-top: 10px; /* Ваш желаемый верхний отступ */
+    margin-bottom: 10px; /* Ваш желаемый нижний отступ */
+
+}
+
+.button.redact-confirm{
+    position: absolute;
+    margin-top: 15px;
+    min-height: 47.2px;
+    width: 185px;
+    margin-left: 15px;
+    padding: 5px 10px;
+    background-color: #ffffff;
+    color: #ffA500;
+    border: 2px solid #ffA500;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+    line-height: 1; /* Уменьшил значение line-height для уменьшения интервала между строками */
+    text-align: center; /* Выравнивание текста по центру */
+}
+
+.button.redact-confirm:hover {
+    border-color: #b0b0b0;
+}
+
+.description-redact {
+    margin-top: 20px;
+    text-align: center; /* Выравнивание текста по центру в блоке */
+}
+
+.description-redact label {
+    display: block; /* Сделаем элемент блочным, чтобы он занимал всю ширину */
+    margin-bottom: 10px; /* Нижний отступ между меткой и текстовым полем */
+}
+
+.description-redact textarea {
+    width: 100%; /* Занимать 100% ширины блока */
+}
+
+.description-redact .button.redact-confirm {
+    /* По желанию, можете настроить стили кнопки */
+}

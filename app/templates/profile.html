@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}
+    Профиль пользователя {{ user.login }}
+{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <h1>Это страница профиля {{ user.login }}</h1>
+        <img class="profile-avatar" src="{{ user.avatar_url() }}" alt="{{ user.login }} Avatar"> <br>
+
+        {% if user.description %}
+            <p class="user-description">{{ user.description }}</p>
+        {% endif %}
+
+        {% if user.id == current_user.id %}
+            <a class="button profile-redact" href="{{ url_for('main.user_update') }}">Редактировать профиль</a>
+            <a class="button quit" href="{{ url_for('main.logout') }}">Выйти из аккаунта</a>
+        {% endif %}
+
+
+    </div>
+{% endblock %}

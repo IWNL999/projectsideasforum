@@ -27,17 +27,17 @@
                 {% for post in latest_posts %}
                     <div class="d-flex text-body-secondary pt-3">
                         {% if post.author.file %}
-                            <a href='/users/{{ post.author.id }}'>
+                            <a class="user-link" href='/profile/{{ post.author.id }}'>
                                 <img class="img-avatar" src="{{ post.author.avatar_url }}" alt="{{ post.author.login }} Avatar">
                             </a>
                         {% else %}
-                            <a href='/users/{{ post.author.id }}'>
+                            <a class="user-link" href='/profile/{{ post.author.id }}'>
                                 <img class="img-avatar" src="{{ post.author.avatar_url }}" alt="Default Avatar">
                             </a>
                         {% endif %}
 
                         <p class="textpr pb-3 mb-0 small lh-sm border-bottom ">
-                            <span class="btn btnusername d-flex d-block text-gray-dark">@{{ post.author.login }}</span>
+                            <a class="btn d-flex d-block text-gray-dark" href='/profile/{{ post.author.id }}'>@{{ post.author.login }}</a>
                             {{ post.title }}
                             <a href='/posts/{{ post.id }}' class="text-details" data-content="Подробнее">Подробнее</a>
                         </p>

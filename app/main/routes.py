@@ -17,10 +17,7 @@ def load_user(user_id):
 def inject_user():
     if current_user.is_authenticated:
         g.current_user = current_user
-        g.current_user_avatar = (
-            url_for('static', filename=f'avatars/{current_user.file}')
-            if current_user.file else url_for('static', filename='avatars/default-avatar.png')
-        )
+        g.current_user_avatar = current_user.avatar_url()
     else:
         g.current_user = None
         g.current_user_avatar = url_for('static', filename='avatars/default-avatar.png')
@@ -87,7 +84,7 @@ def post_delete(id):
             db.session.commit()
             return redirect('/posts')
         else:
-            flash('You do not have permission to delete this post', 'error')
+            flash('Вы не можете удалить этот пост', 'error')
             return redirect('/posts')
     except:
         return "При удалении статьи произошла ошибка"
@@ -98,7 +95,7 @@ def post_delete(id):
 def post_update(id):
     article = Article.query.get(id)
     if article.user_id != current_user.id:
-        flash('You do not have permission to edit this post', 'error')
+        flash('Вы не можете редактировать этот пост', 'error')
         return redirect('/posts')
 
     if request.method == "POST":
@@ -132,23 +129,17 @@ def login():
         if user and user.check_password(password):
             login_user(user)
             flash('Вы успешно вошли в аккаунт!', 'success')
-            return redirect(url_for('main.user_login', login=user.login))
+            return redirect(url_for('main.user_profile_by_id', user_id=user.id))
         else:
             flash('Логин или пароль не корректны', 'error')
     return render_template("login.html")
-
-
-@bp.route('/user_login/<login>')
-@login_required
-def user_login(login):
-    return render_template("user_login.html", login=login)
 
 
 @bp.route("/logout")
 @login_required
 def logout():
     logout_user()
-    flash('You have been logged out', 'info')
+    flash('Вы вышли из своего аккаунта', 'info')
     return redirect(url_for('main.login'))
 
 
@@ -175,11 +166,9 @@ def registration():
                 file.save(file_path)
             else:
                 # Обработка случая, когда файл не был передан или в недопустимом формате
-                flash("Invalid or missing file. Allowed formats: jpg, png")
                 file_path = None
         else:
             # Обработка случая, когда ключ 'file' отсутствует в запросе
-            flash("File not provided in the request.")
             file_path = None
 
         # Остальной код регистрации
@@ -214,9 +203,6 @@ def signup():
             filename = secure_filename(file.filename)
             file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             file.save(file_path)
-        else:
-            # Обработка случая, когда файл не был передан или в недопустимом формате
-            flash("Invalid or missing file. Allowed formats: jpg, png")
     else:
         # Обработка случая, когда ключ 'file' отсутствует в запросе
         flash("File not provided in the request.")
@@ -225,9 +211,44 @@ def signup():
     db.session.add(user)
     db.session.commit()
     return render_template('signup.html')
+    user = User(login=login1, password=password1, email=email, file=file_path)
+    db.session.add(user)
+    db.session.commit()
+    return render_template('signup.html')
 
 
 @bp.route('/profile/<int:user_id>')
-def profile(user_id):
+@login_required
+def user_profile_by_id(user_id):
     user = User.query.get_or_404(user_id)
-    return render_template('profile.html', user=user)
+    return render_template("profile.html", user=user)
+
+
+@bp.route('/profile/update', methods=['GET', 'POST'])
+@login_required
+def user_update():
+    if request.method == 'POST':
+        # Проверка наличия файла с изображением
+        new_avatar = request.files.get('new_avatar')
+        if new_avatar and allowed_file(new_avatar.filename):
+            filename = secure_filename(new_avatar.filename)
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            new_avatar.save(file_path)
+
+            # Обновление аватара пользователя
+            current_user.file = filename
+
+        # Обновление остальных данных профиля
+        current_user.description = request.form.get('new_description', current_user.description)
+
+        # Сохранение изменений в базе данных
+        db.session.commit()
+
+        flash('Профиль успешно обновлен!', 'success')
+        return redirect(url_for('main.user_profile_by_id', user_id=current_user.id))
+
+    return render_template('user_update.html')
+
+
+
+

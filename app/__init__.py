@@ -14,7 +14,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:logachevmaksim07@localhost/users_1'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = 'dfhdhfwqhjggx3463n32462h'
-    UPLOAD_FOLDER = 'static/avatars'
+    UPLOAD_FOLDER = 'app/static/avatars'
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1920 * 1080
     db.init_app(app)
