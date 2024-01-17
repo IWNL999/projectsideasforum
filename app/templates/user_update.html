@@ -3,32 +3,32 @@
     Редактирование профиля пользователя {{ current_user.login }}
 {% endblock %}
 {% block content %}
-    <div class="container mt-4">
+<div class="container mt-4 profile-redact-form alert ">
 
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            <ul class="flashes">
-              {% for message in messages %}
-                <li>{{ message }}</li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-        {% endwith %}
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
 
-        <h1>Редактирование профиля {{ current_user.login }}</h1>
+    <h1>Редактирование профиля {{ current_user.login }}</h1>
 
         <form method="post" action="{{ url_for('main.user_update') }}" enctype="multipart/form-data">
-            <!-- Поле для обновления аватара -->
-            <label for="new_avatar">Сменить аватар:</label>
-            <input type="file" id="new_avatar" name="new_avatar">
-
+            <div class="avatar-update">
+                <!-- Поле для обновления аватара -->
+                <label for="new_avatar">Сменить аватар:</label><br>
+                <input type="file" id="new_avatar" name="new_avatar">
+            </div>
             <!-- Поле для обновления описания профиля -->
             <div class="description-redact">
                 <label for="new_description">Описание профиля:</label>
-                <textarea id="new_description" name="new_description">{{ current_user.description }}</textarea><br>
+                <textarea class="perenos " id="new_description" name="new_description">{{ current_user.description }}</textarea><br>
                 <input class="button redact-confirm" type="submit" value="Сохранить изменения">
             </div>
         </form>
-
-    </div>
+</div>
 {% endblock %}

@@ -22,6 +22,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(60), nullable=False, unique=True)
     file = db.Column(db.String(255))
     description = db.Column(db.String(255))
+    posts = db.relationship('Article', backref='author_user', lazy='dynamic')
 
     def __init__(self, login, password, email, file='default-avatar.png', description=''):
         self.login = login
@@ -43,7 +44,7 @@ class User(UserMixin, db.Model):
 
             file.save(file_path)
             return filename  # Возвращаем только имя файла
-        return Non
+        return None
 
     def is_active(self):
         return True

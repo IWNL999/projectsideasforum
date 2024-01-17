@@ -43,6 +43,13 @@ def about():
 @bp.route('/posts')
 def posts():
     articles = Article.query.order_by(Article.date.desc()).all()
+
+    for post in articles:
+        if post.author and post.author.file:
+            post.author.avatar_url = url_for('static', filename=f'avatars/{post.author.file}')
+        else:
+            post.author.avatar_url = url_for('static', filename='avatars/default-avatar.png')
+
     return render_template("posts.html", articles=articles)
 
 
@@ -75,19 +82,25 @@ def create_article():
 @bp.route('/posts/<int:id>/del')
 @login_required
 def post_delete(id):
+    # Получаем пост или возвращаем ошибку 404, если пост не найден
     article = Article.query.get_or_404(id)
 
-    try:
-        # Добавил проверку, что пользователь, удаляющий пост, является его автором
-        if article.user_id == current_user.id:
+    # Проверяем, является ли текущий пользователь автором поста
+    if article.user_id == current_user.id:
+        try:
+            # Удаляем пост из базы данных
             db.session.delete(article)
             db.session.commit()
+
+            # Выводим сообщение об успехе
+            flash('Пост успешно удален', 'success')
             return redirect('/posts')
-        else:
-            flash('Вы не можете удалить этот пост', 'error')
-            return redirect('/posts')
-    except:
-        return "При удалении статьи произошла ошибка"
+        except:
+            return "При удалении статьи произошла ошибка"
+    else:
+        # Если пользователь не является автором, выводим сообщение об ошибке и оставляем его на текущей странице
+        flash('Вы не можете удалить этот пост', 'error')
+        return redirect(f'/posts/{id}')
 
 
 @bp.route('/posts/<int:id>/update', methods=['POST', 'GET'])
@@ -96,7 +109,7 @@ def post_update(id):
     article = Article.query.get(id)
     if article.user_id != current_user.id:
         flash('Вы не можете редактировать этот пост', 'error')
-        return redirect('/posts')
+        return redirect(f'/posts/{id}')
 
     if request.method == "POST":
         article.title = request.form['title']
@@ -116,6 +129,13 @@ def post_update(id):
 @login_required
 def your_posts():
     articles = Article.query.filter_by(user_id=current_user.id).order_by(Article.date.desc()).all()
+
+    for post in articles:
+        if post.author and post.author.file:
+            post.author.avatar_url = url_for('static', filename=f'avatars/{post.author.file}')
+        else:
+            post.author.avatar_url = url_for('static', filename='avatars/default-avatar.png')
+
     return render_template("your-posts.html", articles=articles)
 
 
@@ -221,7 +241,7 @@ def signup():
 @login_required
 def user_profile_by_id(user_id):
     user = User.query.get_or_404(user_id)
-    return render_template("profile.html", user=user)
+    return render_template('profile.html', user=user)
 
 
 @bp.route('/profile/update', methods=['GET', 'POST'])

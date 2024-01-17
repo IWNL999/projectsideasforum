@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5 perenos">
+<div class="container mt-5 perenos alert alert-info">
     {% if get_flashed_messages() %}
         <ul class="flashes">
             {% for message in get_flashed_messages() %}
@@ -20,10 +20,12 @@
         {% else %}
             <img class="img-avatar mr-2" src="{{ url_for('static', filename='avatars/default-avatar.png') }}" alt="Default Avatar">
         {% endif %}
-        <h1>{{ article.title }}</h1>
+
+        <p class="user-details ml-2">@{{ article.author.login }}</p> <!-- Добавлен этот блок для отображения ника -->
     </div>
 
-    <div class="alert alert-info perenos">
+    <div class="perenos">
+        <h2>{{ article.title }}</h2>
         <p>{{ article.text }}</p>
         <p><b>Дата: {{ article.date.date() }}</b></p>
         <a href="/posts/{{ article.id }}/del" class="btn btn-danger">Удалить</a>
