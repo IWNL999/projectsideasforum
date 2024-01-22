@@ -11,3 +11,8 @@ class RegistrationForm(FlaskForm):
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     file = FileField('Profile Picture', validators=[FileAllowed(['jpg', 'png'])])  # Разрешенные форматы
     submit = SubmitField('Sign Up')
+
+
+class CommentForm(FlaskForm):
+    text = StringField('Comment', validators=[DataRequired()])
+    submit = SubmitField('Post Comment')

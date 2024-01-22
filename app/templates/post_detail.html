@@ -5,31 +5,52 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5 perenos alert alert-info">
-    {% if get_flashed_messages() %}
+  <div class="container">
+        {% with messages = get_flashed_messages() %}
+      {% if messages %}
         <ul class="flashes">
-            {% for message in get_flashed_messages() %}
-                <li>{{ message }}</li>
-            {% endfor %}
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
         </ul>
-    {% endif %}
-
-    <div class="d-flex align-items-center mb-3">
-        {% if article.author.file %}
-            <img class="img-avatar mr-2" src="{{ url_for('static', filename='avatars/' + article.author.file) }}" alt="{{ article.author.login }} Avatar">
-        {% else %}
-            <img class="img-avatar mr-2" src="{{ url_for('static', filename='avatars/default-avatar.png') }}" alt="Default Avatar">
-        {% endif %}
-
-        <p class="user-details ml-2">@{{ article.author.login }}</p> <!-- Добавлен этот блок для отображения ника -->
-    </div>
-
-    <div class="perenos">
-        <h2>{{ article.title }}</h2>
+      {% endif %}
+    {% endwith %}
+    <div class="row">
+      <div class="col-md-8">
+        <h1>{{ article.title }}</h1>
+        <p>{{ article.intro }}</p>
         <p>{{ article.text }}</p>
-        <p><b>Дата: {{ article.date.date() }}</b></p>
-        <a href="/posts/{{ article.id }}/del" class="btn btn-danger">Удалить</a>
-        <a href="/posts/{{ article.id }}/update" class="btn btn-success">Редактировать</a>
+
+        <div class="post-comments">
+            <h2>Комментарии</h2>
+            {% if comments %}
+                <ul class="list-unstyled">
+                    {% for comment in comments %}
+                        <li class="comment">
+                            <p class="comment-text">{{ comment.text }}</p>
+                            <small class="text-muted comment-date">{{ comment.date.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>На данный момент у поста нет комментариев, напишите первый!</p>
+            {% endif %}
+        </div>
+
+
+        <h2>Добавить комментарий</h2>
+        <form method="post" action="{{ url_for('main.post_detail', id=article.id) }}">
+          {{ form.hidden_tag() }}
+          <div class="form-group">
+            {{ form.text.label(class="form-control-label") }}
+            {{ form.text(class="form-control") }}
+          </div>
+          <div class="form-group">
+            {{ form.submit(class="btn btn-primary") }}
+          </div>
+        </form>
+
+      </div>
     </div>
-</div>
+  </div>
 {% endblock %}

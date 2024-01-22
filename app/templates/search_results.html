@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Результаты поиска
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Результаты поиска</h1>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    {% if articles|length > 0 %}
+       {% for el in articles %}
+            <div class="alert alert-info perenos your">
+                <div class="d-flex justify-content-between">
+                    <div class="user-info d-flex align-items-center">
+                        {% if el.author.file %}
+                            <a class="user-link" href='/profile/{{ el.author.id }}'>
+                                <img class="img-avatar" src="{{ el.author.avatar_url }}" alt="{{ el.author.login }} Avatar">
+                            </a>
+                        {% else %}
+                            <a class="user-link" href='/profile/{{ el.author.id }}'>
+                                <img class="img-avatar" src="{{ el.author.avatar_url }}" alt="Default Avatar">
+                            </a>
+                        {% endif %}
+                        <div class="user-details ml-2">
+                            <a class="btn d-flex d-block text-gray-dark user-details" href='/profile/{{ el.author.id }}'>@{{ el.author.login }}</a>
+                        </div>
+                    </div>
+                </div>
+                <h2>{{ el.title }}</h2>
+                <p>{{ el.intro }}</p>
+                <p><b>Дата: {{ el.date.date() }}</b></p>
+                <a href="/posts/{{ el.id }}" class="btn btn-warning">Детальнее</a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>По вашему запросу ничего не найдено.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -25,10 +25,20 @@
                         <li><a href="{{ url_for('main.your_posts') }}" class="nav-link px-2 text-white nav-link">Ваши посты</a></li>
                         <li><a href="{{ url_for('main.create_article') }}" class="nav-link px-2 text-white nav-link">Создать</a></li>
                     </ul>
-                    <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search">
-                        <input type="search" class="form-control form-control-dark text-bg-dark" placeholder="Поиск поста" aria-label="Search">
+
+                    <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search" method="post" action="{{ url_for('main.search_posts') }}">
+                        <div class="input-group">
+                            <input type="search" class="form-control form-control-dark text-bg-dark text-white white-placeholder" placeholder="Поиск постов" aria-label="Search" name="search_term" id="search-input">
+                            <button type="submit" class="btn btn-outline-light">Искать</button>
+                        </div>
                     </form>
 
+                    <script>
+                        function searchPosts() {
+                            var searchTerm = document.getElementById('search-input').value;
+                            console.log('Поиск по запросу:', searchTerm);
+                        }
+                    </script>
                     <div class="text-end">
                         <!-- Добавляем проверку, что пользователь аутентифицирован -->
                     {% if g.current_user %}

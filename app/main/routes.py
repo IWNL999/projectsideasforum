@@ -4,7 +4,8 @@ from sqlalchemy.exc import IntegrityError
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
 from app import db, login_manager
-from app.models import User, Article
+from app.main.forms import CommentForm
+from app.models import User, Article, Comment
 from app.main import bp
 
 
@@ -29,9 +30,11 @@ def index():
     latest_posts = Article.query.order_by(Article.date.desc()).limit(3).all()
     for post in latest_posts:
         if post.author.file:
-            post.author.avatar_url = url_for('static', filename=f'avatars/{post.author.file}')
+            post.author_avatar_url = url_for('static', filename=f'avatars/{post.author.file}')
         else:
-            post.author.avatar_url = url_for('static', filename='avatars/default-avatar.png')
+            post.author_avatar_url = url_for('static', filename='avatars/default-avatar.png')
+        post.author_name = post.author_name()  # Получаем имя автора
+
     return render_template("index.html", latest_posts=latest_posts, user=current_user)
 
 
@@ -53,10 +56,22 @@ def posts():
     return render_template("posts.html", articles=articles)
 
 
-@bp.route('/posts/<int:id>')
+@bp.route('/posts/<int:id>', methods=['GET', 'POST'])
 def post_detail(id):
-    article = Article.query.get(id)
-    return render_template("post_detail.html", article=article)
+    article = Article.query.get_or_404(id)
+    form = CommentForm()
+
+    if form.validate_on_submit():
+        comment = Comment(text=form.text.data, user_id=current_user.id, article_id=article.id)
+        db.session.add(comment)
+        db.session.commit()
+        flash('Ваш комментарий опубликован!', 'success')
+        return redirect(url_for('main.post_detail', id=id))
+
+    # Получим комментарии для данной статьи
+    comments = Comment.query.filter_by(article_id=id).all()
+
+    return render_template("post_detail.html", article=article, form=form, comments=comments)
 
 
 @bp.route('/create-article', methods=['POST', 'GET'])
@@ -216,7 +231,6 @@ def signup():
     password1 = request.form['password']
     email = request.form['email']
     file_path = None
-
     if 'file' in request.files:
         file = request.files['file']
         if file and allowed_file(file.filename):
@@ -270,5 +284,16 @@ def user_update():
     return render_template('user_update.html')
 
 
+@bp.route('/search', methods=['POST'])
+def search_posts():
+    search_term = request.form.get('search_term', '')
+    articles = Article.query.order_by(Article.date.desc()).all()
 
+    filtered_posts = [post for post in Article.query.all() if search_term.lower() in post.title.lower()]
 
+    for post in articles:
+        if post.author and post.author.file:
+            post.author.avatar_url = url_for('static', filename=f'avatars/{post.author.file}')
+        else:
+            post.author.avatar_url = url_for('static', filename='avatars/default-avatar.png')
+    return render_template('search_results.html', search_term=search_term, articles=filtered_posts)

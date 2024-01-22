@@ -28,11 +28,11 @@
                     <div class="d-flex text-body-secondary pt-3">
                         {% if post.author.file %}
                             <a class="user-link" href='/profile/{{ post.author.id }}'>
-                                <img class="img-avatar" src="{{ post.author.avatar_url }}" alt="{{ post.author.login }} Avatar">
+                                <img class="img-avatar" src="{{ post.author_avatar_url }}" alt="{{ post.author.login }} Avatar">
                             </a>
                         {% else %}
                             <a class="user-link" href='/profile/{{ post.author.id }}'>
-                                <img class="img-avatar" src="{{ post.author.avatar_url }}" alt="Default Avatar">
+                                <img class="img-avatar" src="{{ post.author_avatar_url }}" alt="Default Avatar">
                             </a>
                         {% endif %}
 
