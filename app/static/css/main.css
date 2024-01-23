@@ -260,6 +260,7 @@ a:hover {
     width: 50%; /* Занимает половину ширины родителя (container) */
     box-sizing: border-box; /* Учитываем границы и отступы внутри элемента при вычислении его размера */
     margin-top: 0; /* Убираем отступ сверху, который был добавлен в предыдущем коде */
+    margin-top: 20px;
 }
 
 /* Опционально: задайте стили для отображения постов в блоке */
@@ -278,6 +279,7 @@ a:hover {
     width: 50%; /* Занимает половину ширины родителя (container) */
     box-sizing: border-box; /* границы и отступы внутри элемента при вычислении его размера */
     margin-bottom: 20px; /* отступ снизу, чтобы улучшить визуальное разделение блоков */
+    margin-top: 20px;
 }
 
 /* Очистка плавания */
@@ -320,5 +322,28 @@ a:hover {
 .comment-date {
     display: block;
     /* Можете добавить здесь нужные стили для даты комментария */
+}
+
+.post-commdnt-submit{
+    margin-top: 10px;
+}
+
+.comment-avatar {
+    margin: 0;
+    margin-right: 5px; /* Уменьшите значение, если нужно уменьшить отступ справа */
+    margin-top: 5px;  /* Уменьшите значение, если нужно уменьшить отступ сверху */
+}
+
+.big-avatar{
+    width: 128px;
+    height: 128px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #ffA500;
+}
+
+.post-id-avatar{
+    margin-left: 180px;
+    margin-top: 10px;
 }
 

@@ -26,6 +26,7 @@ class User(UserMixin, db.Model):
     description = db.Column(db.String(255))
     user_articles = db.relationship("Article", back_populates="author")  # Используем 'user_articles' вместо 'posts'
     comments = db.Column(db.Text)
+    user_comments = db.relationship("Comment", back_populates="author")
 
     def __init__(self, login, password, email, file='default-avatar.png', description=''):
         self.login = login
@@ -95,6 +96,10 @@ class Comment(db.Model):
     date = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
     article_id = db.Column(db.Integer, db.ForeignKey('article.id'), nullable=False)
+    author = db.relationship('User', back_populates='user_comments', foreign_keys=[user_id])
+
+    def avatar_url(self):
+        return self.author.avatar_url() if self.author else None
 
     def __repr__(self):
         return f'<Comment {self.id}>'

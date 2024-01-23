@@ -1,5 +1,5 @@
 import os
-from flask import render_template, url_for, request, redirect, flash, current_app, g
+from flask import render_template, url_for, request, redirect, flash, current_app, g, abort
 from sqlalchemy.exc import IntegrityError
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
@@ -72,6 +72,22 @@ def post_detail(id):
     comments = Comment.query.filter_by(article_id=id).all()
 
     return render_template("post_detail.html", article=article, form=form, comments=comments)
+
+
+@bp.route('/posts/<int:id>/delete_comment/<int:comment_id>', methods=['POST'])
+@login_required
+def delete_comment(id, comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    # Проверяем, является ли текущий пользователь автором комментария
+    if current_user.id != comment.author.id:
+        abort(403)  # Ошибка доступа запрещена
+    db.session.delete(comment)
+    db.session.commit()
+
+    flash('Комментарий успешно удален', 'success')
+
+    # Возвращаемся на страницу с постом
+    return redirect(url_for('main.post_detail', id=comment.article_id))
 
 
 @bp.route('/create-article', methods=['POST', 'GET'])
