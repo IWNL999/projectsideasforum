@@ -139,7 +139,7 @@ class User(UserMixin, db.Model):
         return self.liked_users.filter_by(id=user_id).first() is not None
 
     def get_id(self):
-        return f"{self.id}-{self.group_id}"
+        return f"{self.id}-{str(self.group_id) if self.group_id is not None else ''}"
 
 
 class Comment(db.Model):
@@ -197,12 +197,4 @@ class AnonymousPost(db.Model):
     date = db.Column(db.DateTime, default=datetime.utcnow)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=True)
-
-
-
-
-
-
-
-
 

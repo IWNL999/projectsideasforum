@@ -18,11 +18,11 @@ def create_app():
     app.config['SECRET_KEY'] = 'dfhdhfwqhjggx3463n32462h'
 
     # Установка пути к папке загрузки файлов для аватаров пользователей
-    UPLOAD_FOLDER_AVATARS = os.path.join(app.root_path, 'static', 'avatars')
+    UPLOAD_FOLDER_AVATARS = os.path.join('static', 'avatars')
     app.config['UPLOAD_FOLDER_AVATARS'] = UPLOAD_FOLDER_AVATARS
 
     # Установка пути к папке загрузки файлов для картинок постов
-    UPLOAD_FOLDER_POST_PICTURES = os.path.join(app.root_path, 'static', 'post_pictures')
+    UPLOAD_FOLDER_POST_PICTURES = os.path.join('static', 'post_pictures')
     app.config['UPLOAD_FOLDER_POST_PICTURES'] = UPLOAD_FOLDER_POST_PICTURES
 
     # Установка максимального размера загружаемого файла

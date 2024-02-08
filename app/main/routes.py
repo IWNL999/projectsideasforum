@@ -105,7 +105,8 @@ def create_article():
         filename = None
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], filename)
+            file_path = os.path.join(current_app.root_path, 'static', 'post_pictures', filename)
+            file_path = file_path.replace('\\', '/')  # Заменяем обратные слеши на прямые
             file.save(file_path)
 
         article = Article(title=title, intro=intro, text=text, user_id=current_user.id, file=filename)
@@ -322,13 +323,14 @@ def search_posts():
     search_term = request.form.get('search_term', '')
     articles = Article.query.order_by(Article.date.desc()).all()
 
-    filtered_posts = [post for post in Article.query.all() if search_term.lower() in post.title.lower()]
+    filtered_posts = [post for post in articles if search_term.lower() in post.title.lower()]
 
-    for post in articles:
+    for post in filtered_posts:
         if post.author and post.author.file:
             post.author.avatar_url = url_for('static', filename=f'avatars/{post.author.file}')
         else:
             post.author.avatar_url = url_for('static', filename='avatars/default-avatar.png')
+
     return render_template('search_results.html', search_term=search_term, articles=filtered_posts)
 
 
