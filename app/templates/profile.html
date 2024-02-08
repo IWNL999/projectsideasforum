@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
+
 {% block title %}
     Профиль пользователя {{ user.login }}
 {% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     {% with messages = get_flashed_messages() %}
@@ -21,6 +23,19 @@
             <p class="user-description">{{ user.description }}</p>
         {% endif %}
 
+        <p>
+            <strong>Likes: <span id="like-count-{{ user.id }}">{{ user.likes_received.count() }}</span></strong>
+            {% if current_user.is_authenticated and current_user.id != user.id %}
+                <button id="like-button-{{ user.id }}" onclick="toggleLike({{ user.id }})" class="btn btn-primary">
+                    {% if current_user.has_liked_user(user.id) %}
+                        Unlike
+                    {% else %}
+                        Like
+                    {% endif %}
+                </button>
+            {% endif %}
+        </p>
+
         {% if user.id == current_user.id %}
             <a class="button profile-redact" href="{{ url_for('main.user_update') }}">Редактировать профиль</a>
             <a class="button quit" href="{{ url_for('main.logout') }}">Выйти из аккаунта</a>
@@ -28,16 +43,27 @@
     </div>
     <div class="profile_posts">
         <h1>Посты пользователя:</h1>
-        {% for post in user.posts %}
+
+        {% for post in user.user_articles %}
             <div class="alert alert-info perenos">
                 <h3>{{ post.title }}</h3>
                 <p>{{ post.intro }}</p>
                 <p><b>Дата: {{ post.date.date() }}</b></p>
-                <a href="/posts/{{ post.id }}" class="btn btn-warning">Детальнее</a>
+                <div class="detalnee-delete d-flex justify-content-between align-items-center">
+                    <a href="/posts/{{ post.id }}" class="btn btn-warning">Детальнее</a>
+
+                    <!-- Добавляем кнопку "удалить" только если текущий пользователь - автор поста -->
+                    {% if current_user.is_authenticated and current_user.id == post.author.id %}
+                        <form method="post" action="{{ url_for('main.post_delete', id=post.id) }}?next={{ request.path }}">
+                            {{ form.hidden_tag() }}
+                            <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                        </form>
+                    {% endif %}
+                </div>
             </div>
         {% endfor %}
 
-        {% if not user.posts %}
+        {% if not user.user_articles %}
             <p>У пользователя ещё нет постов</p>
         {% endif %}
     </div>

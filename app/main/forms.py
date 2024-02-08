@@ -16,3 +16,8 @@ class RegistrationForm(FlaskForm):
 class CommentForm(FlaskForm):
     text = StringField('Comment', validators=[DataRequired()])
     submit = SubmitField('Post Comment')
+
+
+class CreateGroupForm(FlaskForm):
+    group_name = StringField('Название группы', validators=[DataRequired()])
+    submit = SubmitField('Создать группу')

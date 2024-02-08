@@ -3,6 +3,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from sqlalchemy.exc import OperationalError
+import os
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -15,14 +16,25 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:logachevmaksim07@localhost/users_1'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = 'dfhdhfwqhjggx3463n32462h'
-    UPLOAD_FOLDER = 'app/static/avatars'
-    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+    # Установка пути к папке загрузки файлов для аватаров пользователей
+    UPLOAD_FOLDER_AVATARS = os.path.join(app.root_path, 'static', 'avatars')
+    app.config['UPLOAD_FOLDER_AVATARS'] = UPLOAD_FOLDER_AVATARS
+
+    # Установка пути к папке загрузки файлов для картинок постов
+    UPLOAD_FOLDER_POST_PICTURES = os.path.join(app.root_path, 'static', 'post_pictures')
+    app.config['UPLOAD_FOLDER_POST_PICTURES'] = UPLOAD_FOLDER_POST_PICTURES
+
+    # Установка максимального размера загружаемого файла
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1920 * 1080
+
     db.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
+
     from app.main import bp
     app.register_blueprint(bp)
+
     return app
 
 

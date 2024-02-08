@@ -8,9 +8,28 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css')}}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
     <title>{% block title %}{% endblock %}</title>
+    <script>
+        function toggleLike(user_id) {
+            fetch(`/like/${user_id}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    // Обновите отображение количества лайков на странице
+                    const likeCountElement = document.getElementById(`like-count-${user_id}`);
+                    if (likeCountElement) {
+                        likeCountElement.innerText = data.likes;
+                    }
+                })
+                .catch(error => console.error('Error toggling like:', error));
+        }
+    </script>
 </head>
 
 <body>
@@ -21,9 +40,27 @@
                     <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
                         <li><a href="{{ url_for('main.index') }}" class="nav-link px-2 text-white">Главная</a></li>
                         <li><a href="{{ url_for('main.about') }}" class="nav-link px-2 text-white">О нас</a></li>
-                        <li><a href="{{ url_for('main.posts') }}" class="nav-link px-2 text-white nav-link">Все посты</a></li>
-                        <li><a href="{{ url_for('main.your_posts') }}" class="nav-link px-2 text-white nav-link">Ваши посты</a></li>
-                        <li><a href="{{ url_for('main.create_article') }}" class="nav-link px-2 text-white nav-link">Создать</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" id="postsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Посты
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="postsDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('main.posts') }}">Все посты</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.your_posts') }}">Ваши посты</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.create_article') }}">Создать пост</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Группы
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('main.groups') }}">Ваши группы</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.create_group') }}">Создать группу</a></li>
+                            </ul>
+                        </li>
                     </ul>
 
                     <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search" method="post" action="{{ url_for('main.search_posts') }}">
@@ -39,6 +76,7 @@
                             console.log('Поиск по запросу:', searchTerm);
                         }
                     </script>
+
                     <div class="text-end">
                         <!-- Добавляем проверку, что пользователь аутентифицирован -->
                     {% if g.current_user %}
@@ -68,6 +106,31 @@
             <p class="text-center text-body-secondary">Projects & Ideas</p>
         </footer>
     </div>
+
 </body>
 
 </html>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Найти все кнопки удаления с классом btn-delete-confirm
+    var deleteButtons = document.querySelectorAll('.btn-delete-confirm');
+
+    // Добавить обработчик событий для каждой кнопки
+    deleteButtons.forEach(function (button) {
+        button.addEventListener('click', function (event) {
+            // Остановить действие по умолчанию (отправку формы)
+            event.preventDefault();
+
+            // Отобразить всплывающее окно с подтверждением
+            var isConfirmed = confirm('Вы уверены, что хотите удалить этот пост?');
+
+            // Если пользователь подтвердил удаление, отправить форму
+            if (isConfirmed) {
+                var form = button.closest('form');
+                form.submit();
+            }
+        });
+    });
+});
+</script>

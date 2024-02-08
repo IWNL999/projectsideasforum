@@ -5,25 +5,68 @@
 {% endblock %}
 
 {% block content %}
-
 <div class="container mt-5 create rounded shadow-sm post_add">
-
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul class="flashes">
-      {% for message in messages %}
-        <li>{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
 
     <h1>Добавление статьи</h1>
-    <form  method="post">
-        <input type="text" name="title" id="title" class="form-control" placeholder="Введите название"><br>
-        <textarea name="intro" id="intro" class="form-control" placeholder="Введите анонс"></textarea><br>
-        <textarea name="text" id="text" class="form-control" placeholder="Введите основной текст"></textarea><br>
-        <input type="submit" class="btn btn-warning otpravit" value="Отправить">
+    <form method="post" enctype="multipart/form-data">
+      <div class="form-container">
+        <div class="form-inputs">
+          <input type="text" name="title" id="title" class="form-control" placeholder="Введите название"><br>
+          <textarea name="intro" id="intro" class="form-control" placeholder="Введите анонс"></textarea><br>
+          <textarea name="text" id="text" class="form-control" placeholder="Введите основной текст"></textarea><br>
+        </div>
+        <div class="form-file">
+          <label for="file" class="btn btn-secondary">Добавить файлы</label>
+          <input type="file" name="file" id="file" style="display:none" accept="image/*" multiple="true">
+        </div>
+      </div>
+      <div id="file-preview-container" class="mt-3"></div>
+      <input type="submit" class="btn btn-warning otpravit" value="Отправить">
     </form>
 </div>
+
+<script>
+document.getElementById('file').addEventListener('change', function(e) {
+    const fileInput = e.target;
+    const filePreviewContainer = document.getElementById('file-preview-container');
+
+    filePreviewContainer.innerHTML = '';
+
+    for (const file of fileInput.files) {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const imagePreview = document.createElement('a');
+                imagePreview.href = event.target.result;
+                imagePreview.setAttribute('data-fancybox', 'gallery');
+                const img = document.createElement('img');
+                img.src = event.target.result;
+                img.classList.add('img-preview');
+                imagePreview.appendChild(img);
+                filePreviewContainer.appendChild(imagePreview);
+            };
+
+            reader.readAsDataURL(file);
+        }
+    }
+});
+
+$(document).ready(function() {
+    $('[data-fancybox="gallery"]').fancybox({
+        thumbs: {
+            autoStart: true,
+        },
+    });
+});
+</script>
 {% endblock %}

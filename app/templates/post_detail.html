@@ -1,3 +1,5 @@
+<!-- Ваш HTML-файл -->
+
 {% extends 'base.html' %}
 
 {% block title %}
@@ -5,59 +7,89 @@
 {% endblock %}
 
 {% block content %}
-<div class="row">
-  <div class="col-md-2">
-    <img src="{{ article.author.avatar_url() }}" alt="Author Avatar" class="img-avatar big-avatar post-id-avatar"
-         onclick="window.location.href='{{ url_for('main.user_profile_by_id', user_id=article.author.id) }}';">
-  </div>
-  <div class="col-md-10">
-    <h1>{{ article.title }}</h1>
-    <p>{{ article.intro }}</p>
-    <p>{{ article.text }}</p>
-    <!-- Горизонтальная черта -->
-    <hr class="my-4">
+    <div class="container perenos konkretniy-post">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul class="flashes">
+              {% for message in messages %}
+                <li>{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
 
-    <div class="post-comments">
-      <h2>Комментарии</h2>
-      {% if comments %}
-        {% for comment in comments %}
-          <div class="comment-container">
-            <div class="row">
-              <div class="col-md-1">
-                  <img src="{{ comment.avatar_url() }}" alt="Avatar" class="img-avatar comment-avatar">
-              </div>
-              <div class="col-md-10">
-                <div class="comment-content">
-                  <p class="comment-text">{{ comment.text }}</p>
-                  <small class="text-muted comment-date">{{ comment.date.strftime('%Y-%m-%d %H:%M') }}</small>
-                </div>
-                {% if current_user.is_authenticated and current_user.id == comment.author.id %}
-                  <!-- Показать кнопку удаления только автору комментария -->
-                  <form method="post" action="{{ url_for('main.delete_comment', id=article.id, comment_id=comment.id) }}">
-                      {{ form.hidden_tag() }}
-                      <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
-                  </form>
-                {% endif %}
-              </div>
-            </div>
+        <div class="row">
+          <div class="col-md-2">
+            <img src="{{ article.author.avatar_url() }}" alt="Author Avatar" class="img-avatar big-avatar post-id-avatar"
+                 onclick="window.location.href='{{ url_for('main.user_profile_by_id', user_id=article.author.id) }}';">
           </div>
-        {% endfor %}
-      {% else %}
-        <p>На данный момент у поста нет комментариев, напишите первый!</p>
-      {% endif %}
-    </div>
+          <div class="col-md-10 perenos">
+            <h1>{{ article.title }}</h1>
+            <p>{{ article.intro }}</p>
+            <p>{{ article.text }}</p>
+            {% if article.file %}
+                <img src="{{ url_for('static', filename='post_pictures/' + article.file) }}" alt="Post Image" class="img-fluid post-image">
+            {% endif %}
+            <!-- Горизонтальная черта -->
+            <hr class="my-4">
+            <div class="post-actions">
+              {% if current_user.is_authenticated and current_user.id == article.author.id %}
+                <form method="post" action="{{ url_for('main.post_delete', id=article.id, next=request.path) }}">
+                  {{ form.hidden_tag() }}
+                    <a href="{{ url_for('main.post_update', id=article.id) }}" class="btn btn-warning">Изменить</a>
+                    <button type="submit" class="btn btn-danger btn-delete-confirm">Удалить</button>
+                </form>
+              {% endif %}
 
-    <h2>Добавить комментарий</h2>
-    <form method="post" action="{{ url_for('main.post_detail', id=article.id) }}">
-        {{ form.hidden_tag() }}
-        <div class="form-group">
-            {{ form.text(class="form-control", placeholder="Введите комментарий") }}
         </div>
-        <div class="form-group post-commdnt-submit">
-            {{ form.submit(class="btn btn-primary", value="Прокомментировать") }}
-        </div>
-    </form>
-  </div>
-</div>
 
+            <div class="post-comments">
+              <h2>Комментарии</h2>
+              {% if comments %}
+                {% for comment in comments %}
+                  <div class="comment-container">
+                    <div class="row">
+                      <div class="col-md-1">
+                        <img src="{{ comment.avatar_url() }}" alt="Avatar" class="img-avatar comment-avatar">
+                      </div>
+                      <div class="col-md-10">
+                        <div class="comment-content">
+                          <p class="comment-text">{{ comment.text }}</p>
+                          <small class="text-muted comment-date">{{ comment.date.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                        {% if current_user.is_authenticated and current_user.id == comment.author.id %}
+                          <form method="post" action="{{ url_for('main.delete_comment', id=article.id, comment_id=comment.id) }}">
+                            {{ form.hidden_tag() }}
+                            <button type="submit" class="btn btn-danger btn-sm float-right btn-delete-confirm">Удалить</button>
+                          </form>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <p>На данный момент у поста нет комментариев, напишите первый!</p>
+              {% endif %}
+            </div>
+
+            <h2>Добавить комментарий</h2>
+            <form method="post" action="{{ url_for('main.post_detail', id=article.id) }}">
+              {{ form.hidden_tag() }}
+              <div class="form-group">
+                {{ form.text(class="form-control", placeholder="Введите комментарий") }}
+              </div>
+              <div class="form-group post-commdnt-submit">
+                {{ form.submit(class="btn btn-primary", value="Прокомментировать") }}
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Модальное окно для просмотра изображений -->
+      <div id="myModal" class="modal">
+          <span class="close">&times;</span>
+          <img class="modal-content" id="img01">
+      </div>
 {% endblock %}
+

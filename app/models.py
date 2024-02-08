@@ -1,7 +1,6 @@
 import os
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import UniqueConstraint
 from flask import current_app, url_for
-from sqlalchemy.orm import relationship
 from werkzeug.datastructures import FileStorage
 from app import db, bcrypt
 from werkzeug.utils import secure_filename
@@ -16,6 +15,34 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+like = db.Table('like',
+    db.Column('user_id', db.Integer, db.ForeignKey('users1.id')),
+    db.Column('recipient_id', db.Integer, db.ForeignKey('users1.id')),
+    db.UniqueConstraint('user_id', 'recipient_id', name='unique_like_constraint')
+)
+
+
+class UserGroup(db.Model):
+    __tablename__ = 'user_group'
+    user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('group_table.id'), primary_key=True)
+    user = db.relationship('User', back_populates='user_groups', foreign_keys=[user_id], overlaps="groups")
+    group = db.relationship('GroupModel', back_populates='group_users', foreign_keys=[group_id], overlaps="members")
+
+
+class GroupModel(db.Model):
+    __tablename__ = 'group_table'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
+
+    members = db.relationship('User', secondary='user_group', back_populates='groups', overlaps="user")
+    group_users = db.relationship('UserGroup', back_populates='group', overlaps="members")
+    posts = db.relationship('Article', back_populates='group', lazy=True)
+
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users1'
     id = db.Column(db.Integer, primary_key=True, unique=True)
@@ -24,9 +51,31 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(60), nullable=False, unique=True)
     file = db.Column(db.String(255))
     description = db.Column(db.String(255))
-    user_articles = db.relationship("Article", back_populates="author")  # Используем 'user_articles' вместо 'posts'
     comments = db.Column(db.Text)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('users1.id'))
+    group_id = db.Column(db.Integer, db.ForeignKey('group_table.id'))
+    user_articles = db.relationship("Article", back_populates="author")
     user_comments = db.relationship("Comment", back_populates="author")
+    user_groups = db.relationship('UserGroup', back_populates='user', foreign_keys=[UserGroup.user_id], overlaps="groups, members")
+    groups = db.relationship('GroupModel', secondary='user_group', back_populates='members', overlaps="group,group_users")
+    anonymous_posts = db.relationship('AnonymousPost', backref='author', foreign_keys='AnonymousPost.author_id', lazy='dynamic')
+
+    # Новые отношения для лайков
+    liked_users = db.relationship('User', secondary='like',
+                                  primaryjoin='User.id == like.c.user_id',
+                                  secondaryjoin='User.id == like.c.recipient_id',
+                                  back_populates='likes_received',
+                                  lazy='dynamic')
+
+    likes_received = db.relationship('User', secondary='like',
+                                     primaryjoin='User.id == like.c.recipient_id',
+                                     secondaryjoin='User.id == like.c.user_id',
+                                     back_populates='liked_users',
+                                     lazy='dynamic')
+
+    __table_args__ = (
+        UniqueConstraint('id', 'recipient_id', name='unique_like_constraint'),
+    )
 
     def __init__(self, login, password, email, file='default-avatar.png', description=''):
         self.login = login
@@ -45,7 +94,7 @@ class User(UserMixin, db.Model):
     def save_file(self, file):
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER_AVATARS'], filename)
             file.save(file_path)
             return filename
         return None
@@ -75,9 +124,7 @@ class User(UserMixin, db.Model):
         pass
 
     def avatar_url(self):
-        return url_for('static', filename=f'avatars/{self.file}') if self.file else url_for('static',
-                                                                                            filename='avatars/default'
-                                                                                                     '-avatar.png')
+        return url_for('static', filename=f'avatars/{self.file}') if self.file else url_for('static', filename='avatars/default-avatar.png')
 
     def add_comment(self, comment_text, article_id):
         comment = Comment(text=comment_text, user_id=self.id, article_id=article_id)
@@ -87,6 +134,12 @@ class User(UserMixin, db.Model):
     def get_comments(self):
         import json
         return json.loads(self.comments)
+
+    def has_liked_user(self, user_id):
+        return self.liked_users.filter_by(id=user_id).first() is not None
+
+    def get_id(self):
+        return f"{self.id}-{self.group_id}"
 
 
 class Comment(db.Model):
@@ -112,7 +165,19 @@ class Article(db.Model):
     text = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey('group_table.id'))  # Необязательный параметр
+    group = db.relationship('GroupModel', back_populates='posts', foreign_keys=[group_id])
     author = db.relationship('User', back_populates='user_articles', foreign_keys=[user_id])
+    file = db.Column(db.String(255))  # Добавляем столбец для хранения пути к файлу
+    comments = db.relationship("Comment", cascade="all, delete-orphan", backref="article")
+
+    def __init__(self, title, intro, text, user_id, group_id=None, file=None):  # Добавляем аргумент file
+        self.title = title
+        self.intro = intro
+        self.text = text
+        self.user_id = user_id
+        self.group_id = group_id
+        self.file = file  # Сохраняем переданный файл в атрибуте file
 
     def author_name(self):
         user = User.query.get(self.user_id)
@@ -124,3 +189,20 @@ class Article(db.Model):
 
     def __repr__(self):
         return f'<Article {self.id}>'
+
+
+class AnonymousPost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Text, nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=True)
+
+
+
+
+
+
+
+
+
