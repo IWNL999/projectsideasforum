@@ -5,14 +5,18 @@ from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
 from app import db, login_manager
 from app.main.forms import CommentForm, CreateGroupForm
-from app.models import User, Article, Comment, GroupModel, UserGroup
+from app.models import User, Article, Comment, GroupModel, UserGroup, AnonymousPost
 from app.main import bp
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    group_id = request.args.get('group_id')
-    return User.query.filter_by(id=user_id, group_id=group_id).first()
+    try:
+        user_id = int(user_id)
+        group_id = request.args.get('group_id')
+        return User.query.filter_by(id=user_id, group_id=group_id).first()
+    except ValueError:
+        return None
 
 
 @bp.before_request
@@ -49,13 +53,16 @@ def about():
 def posts():
     articles = Article.query.order_by(Article.date.desc()).all()
 
+    # Дополнительная обработка для анонимных постов
+    anonymous_posts = AnonymousPost.query.order_by(AnonymousPost.date.desc()).all()
+
     for post in articles:
         if post.author and post.author.file:
             post.author.avatar_url = url_for('static', filename=f'avatars/{post.author.file}')
         else:
             post.author.avatar_url = url_for('static', filename='avatars/default-avatar.png')
 
-    return render_template("posts.html", articles=articles)
+    return render_template("posts.html", articles=articles, anonymous_posts=anonymous_posts)
 
 
 @bp.route('/posts/<int:id>', methods=['GET', 'POST'])
@@ -80,7 +87,7 @@ def post_detail(id):
 @login_required
 def delete_comment(id, comment_id):
     comment = Comment.query.get_or_404(comment_id)
-    # Проверяем, является ли текущий пользователь автором комментария
+
     if current_user.id != comment.author.id:
         abort(403)  # Ошибка доступа запрещена
     db.session.delete(comment)
@@ -127,25 +134,23 @@ def create_article():
 @bp.route('/posts/<int:id>/del', methods=['POST'])
 @login_required
 def post_delete(id):
-    # Получаем пост или возвращаем ошибку 404, если пост не найден
+
     post = Article.query.get_or_404(id)
 
-    # Проверяем, является ли текущий пользователь автором поста
     if post.user_id == current_user.id:
         try:
-            # Удаляем пост из базы данных
+
             db.session.delete(post)
             db.session.commit()
 
-            # Выводим сообщение об успехе
             flash('Пост успешно удален', 'success')
             return redirect(request.form.get('next', '/posts'))
         except Exception as e:
-            # Выводим сообщение об ошибке и перенаправляем на страницу с постами пользователя
+
             flash(f'При удалении статьи произошла ошибка: {str(e)}', 'error')
             return redirect('/posts')
     else:
-        # Если пользователь не является автором, выводим сообщение об ошибке и оставляем его на текущей странице
+
         flash('Вы не можете удалить этот пост', 'error')
         return redirect(f'/posts/{id}')
 
@@ -165,7 +170,6 @@ def post_update(id):
 
         try:
             db.session.commit()
-            # Используйте url_for для формирования URL страницы поста
             return redirect(url_for('main.post_detail', id=id))
         except:
             return "При редактировании статьи произошла ошибка"
@@ -225,7 +229,6 @@ def registration():
         password1 = request.form['password']
         email = request.form['email']
 
-        # Проверяем, был ли файл отправлен с формой
         if 'file' in request.files:
             file = request.files['file']
             if file and allowed_file(file.filename):
@@ -239,7 +242,6 @@ def registration():
             # Обработка случая, когда ключ 'file' отсутствует в запросе
             file_path = None
 
-        # Остальной код регистрации
         user = User(login=login1, password=password1, email=email, file=filename)
         try:
             user.set_password(password1)
@@ -274,11 +276,7 @@ def signup():
         # Обработка случая, когда ключ 'file' отсутствует в запросе
         flash("File not provided in the request.")
 
-    user = User(login=login1, password=password1, email=email, file=file_path)
-    db.session.add(user)
-    db.session.commit()
-    return render_template('signup.html')
-    user = User(login=login1, password=password1, email=email, file=file_path)
+    user = User(login=login1, password=password1, email=email, file=filename)
     db.session.add(user)
     db.session.commit()
     return render_template('signup.html')
@@ -289,6 +287,7 @@ def signup():
 def user_profile_by_id(user_id):
     user = User.query.get_or_404(user_id)
     form = CommentForm()
+    anonymous_posts = AnonymousPost.query.order_by(AnonymousPost.date.desc()).all()
     return render_template('profile.html', user=user, form=form)
 
 
@@ -324,6 +323,7 @@ def search_posts():
     articles = Article.query.order_by(Article.date.desc()).all()
 
     filtered_posts = [post for post in articles if search_term.lower() in post.title.lower()]
+    anonymous_posts = AnonymousPost.query.order_by(AnonymousPost.date.desc()).all()
 
     for post in filtered_posts:
         if post.author and post.author.file:
@@ -341,19 +341,17 @@ def search_posts():
 def like_user(user_id):
     recipient = User.query.get_or_404(user_id)
 
-    # Проверяем, поставил ли текущий пользователь лайк
     if current_user.has_liked_user(user_id):
-        # Если да, убираем лайк
+
         current_user.liked_users.remove(recipient)
         db.session.commit()
 
-        # Обновленное количество лайков
         updated_likes = recipient.likes_received.count()
 
         # JSON с обновленным количеством лайков и информацией об отсутствии лайка
         return jsonify(likes=updated_likes, isLiked=False)
 
-    # Иначе добавляем лайк
+    # Иначе лайк
     current_user.liked_users.append(recipient)
     db.session.commit()
 
@@ -434,3 +432,28 @@ def group_posts(group_id):
     group_posts = group.posts  # Предполагаем, что у группы есть атрибут posts с постами
 
     return render_template('group-posts.html', group=group, group_posts=group_posts)
+
+
+@bp.route('/posts/<int:id>/hide', methods=['POST'])
+@login_required
+def hide_post(id):
+    post = Article.query.get_or_404(id)
+
+    # является ли текущий пользователь автором поста
+    if post.user_id == current_user.id:
+        try:
+
+            post.hidden = True
+            db.session.commit()
+
+            flash('Пост успешно скрыт', 'success')
+        except Exception as e:
+
+            flash(f'При скрытии поста произошла ошибка: {str(e)}', 'error')
+    else:
+
+        flash('Вы не можете скрыть этот пост', 'error')
+
+    # Независимо от результата, перенаправляем пользователя на страницу с постом
+    return redirect(f'/posts/{id}')
+

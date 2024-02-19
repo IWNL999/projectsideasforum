@@ -1,7 +1,6 @@
 import os
 from sqlalchemy import UniqueConstraint
 from flask import current_app, url_for
-from werkzeug.datastructures import FileStorage
 from app import db, bcrypt
 from werkzeug.utils import secure_filename
 from datetime import datetime
@@ -82,13 +81,7 @@ class User(UserMixin, db.Model):
         self.set_password(password)
         self.email = email
         self.description = description
-        if file and file != 'default-avatar.png':
-            if isinstance(file, FileStorage):
-                self.file = self.save_file(file)
-            else:
-                self.file = file
-        else:
-            self.file = None
+        self.file = file
         self.comments = "[]"  # Начальное значение списка комментариев
 
     def save_file(self, file):
@@ -118,7 +111,10 @@ class User(UserMixin, db.Model):
         return url_for('main.profile_by_id', user_id=self.id)
 
     def get_avatar_url(self):
-        return url_for('static', filename=f'avatars/{self.file}')
+        if self.file:
+            return url_for('static', filename=f'avatars/{self.file}')
+        else:
+            return url_for('static', filename='avatars/default-avatar.png')
 
     def set_avatar_url(self, value):
         pass
@@ -139,7 +135,7 @@ class User(UserMixin, db.Model):
         return self.liked_users.filter_by(id=user_id).first() is not None
 
     def get_id(self):
-        return f"{self.id}-{str(self.group_id) if self.group_id is not None else ''}"
+        return f"{self.id}{str(self.group_id) if self.group_id is not None else ''}"
 
 
 class Comment(db.Model):
@@ -166,18 +162,19 @@ class Article(db.Model):
     date = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group_table.id'))  # Необязательный параметр
+    file = db.Column(db.String(255))  # столбец для хранения пути к файлу
+    hidden = db.Column(db.Boolean, default=False)
+    comments = db.relationship("Comment", cascade="all, delete-orphan", backref="article")
     group = db.relationship('GroupModel', back_populates='posts', foreign_keys=[group_id])
     author = db.relationship('User', back_populates='user_articles', foreign_keys=[user_id])
-    file = db.Column(db.String(255))  # Добавляем столбец для хранения пути к файлу
-    comments = db.relationship("Comment", cascade="all, delete-orphan", backref="article")
 
-    def __init__(self, title, intro, text, user_id, group_id=None, file=None):  # Добавляем аргумент file
+    def __init__(self, title, intro, text, user_id, group_id=None, file=None):
         self.title = title
         self.intro = intro
         self.text = text
         self.user_id = user_id
         self.group_id = group_id
-        self.file = file  # Сохраняем переданный файл в атрибуте file
+        self.file = file
 
     def author_name(self):
         user = User.query.get(self.user_id)
@@ -197,4 +194,12 @@ class AnonymousPost(db.Model):
     date = db.Column(db.DateTime, default=datetime.utcnow)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=True)
+    hidden = db.Column(db.Boolean, default=False)  # столбец для скрытия постов
+
+    def __init__(self, text, group_id, author_id=None, hidden=False):
+        self.text = text
+        self.group_id = group_id
+        self.author_id = author_id
+        self.hidden = hidden
+
 

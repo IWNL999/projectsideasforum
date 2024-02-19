@@ -463,3 +463,22 @@ a:hover {
   text-decoration: none;
   cursor: pointer;
 }
+
+.btn-hide{
+    margin: 0;
+}
+
+.btn-del{
+    width: 80px;
+    margin-left: px;
+}
+
+.btn-del2{
+    width: 70px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.post-image{
+    width: 288px;
+}
