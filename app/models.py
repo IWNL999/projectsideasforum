@@ -23,23 +23,27 @@ like = db.Table('like',
 
 class UserGroup(db.Model):
     __tablename__ = 'user_group'
+
     user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), primary_key=True)
-    group_id = db.Column(db.Integer, db.ForeignKey('group_table.id'), primary_key=True)
-    user = db.relationship('User', back_populates='user_groups', foreign_keys=[user_id], overlaps="groups")
-    group = db.relationship('GroupModel', back_populates='group_users', foreign_keys=[group_id], overlaps="members")
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), primary_key=True)
+
+    group = db.relationship('GroupModel', back_populates='user_groups')
+    user = db.relationship('User', back_populates="user_groups")
 
 
 class GroupModel(db.Model):
-    __tablename__ = 'group_table'
-    __table_args__ = {'extend_existing': True}
+    __tablename__ = 'groups'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
 
-    members = db.relationship('User', secondary='user_group', back_populates='groups', overlaps="user")
-    group_users = db.relationship('UserGroup', back_populates='group', overlaps="members")
-    posts = db.relationship('Article', back_populates='group', lazy=True)
+    user_groups = db.relationship('UserGroup', back_populates='group')
+
+    author = db.relationship('User', back_populates='authored_groups', foreign_keys=[author_id])
+    members = db.relationship('User', secondary='user_group', back_populates='groups')
+
+    posts = db.relationship('Article', back_populates='group')
 
 
 class User(UserMixin, db.Model):
@@ -55,9 +59,9 @@ class User(UserMixin, db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('group_table.id'))
     user_articles = db.relationship("Article", back_populates="author")
     user_comments = db.relationship("Comment", back_populates="author")
-    user_groups = db.relationship('UserGroup', back_populates='user', foreign_keys=[UserGroup.user_id], overlaps="groups, members")
-    groups = db.relationship('GroupModel', secondary='user_group', back_populates='members', overlaps="group,group_users")
-    anonymous_posts = db.relationship('AnonymousPost', backref='author', foreign_keys='AnonymousPost.author_id', lazy='dynamic')
+    user_groups = db.relationship('UserGroup', back_populates='user', foreign_keys=[UserGroup.user_id])
+    groups = db.relationship('GroupModel', secondary='user_group', back_populates='members')
+    authored_groups = db.relationship('GroupModel', back_populates='author', foreign_keys='GroupModel.author_id')
 
     # Новые отношения для лайков
     liked_users = db.relationship('User', secondary='like',
@@ -82,7 +86,7 @@ class User(UserMixin, db.Model):
         self.email = email
         self.description = description
         self.file = file
-        self.comments = "[]"  # Начальное значение списка комментариев
+        self.comments = "[]"
 
     def save_file(self, file):
         if file and allowed_file(file.filename):
@@ -161,20 +165,23 @@ class Article(db.Model):
     text = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
-    group_id = db.Column(db.Integer, db.ForeignKey('group_table.id'))  # Необязательный параметр
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))  # Внешний ключ для связи с таблицей groups
     file = db.Column(db.String(255))  # столбец для хранения пути к файлу
     hidden = db.Column(db.Boolean, default=False)
+    visibility = db.Column(db.String(255))  # столбец для хранения информации о видимости поста
+
     comments = db.relationship("Comment", cascade="all, delete-orphan", backref="article")
-    group = db.relationship('GroupModel', back_populates='posts', foreign_keys=[group_id])
+    group = db.relationship('GroupModel', back_populates='posts')
     author = db.relationship('User', back_populates='user_articles', foreign_keys=[user_id])
 
-    def __init__(self, title, intro, text, user_id, group_id=None, file=None):
+    def __init__(self, title, intro, text, user_id, group_id=None, file=None, visibility=None):
         self.title = title
         self.intro = intro
         self.text = text
         self.user_id = user_id
         self.group_id = group_id
         self.file = file
+        self.visibility = visibility
 
     def author_name(self):
         user = User.query.get(self.user_id)
@@ -187,19 +194,5 @@ class Article(db.Model):
     def __repr__(self):
         return f'<Article {self.id}>'
 
-
-class AnonymousPost(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.Text, nullable=False)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
-    author_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=True)
-    hidden = db.Column(db.Boolean, default=False)  # столбец для скрытия постов
-
-    def __init__(self, text, group_id, author_id=None, hidden=False):
-        self.text = text
-        self.group_id = group_id
-        self.author_id = author_id
-        self.hidden = hidden
 
 

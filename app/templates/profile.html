@@ -26,11 +26,11 @@
         <p>
             <strong>Likes: <span id="like-count-{{ user.id }}">{{ user.likes_received.count() }}</span></strong>
             {% if current_user.is_authenticated and current_user.id != user.id %}
-                <button id="like-button-{{ user.id }}" onclick="toggleLike({{ user.id }})" class="btn btn-primary">
+                <button class="like-button" onclick="toggleLike({{ user.id }})">
                     {% if current_user.has_liked_user(user.id) %}
-                        Unlike
+                        <img src="{{ url_for('static', filename='pictures/like.png') }}" alt="Like">
                     {% else %}
-                        Like
+                        <img src="{{ url_for('static', filename='pictures/like.png') }}" alt="Unlike">
                     {% endif %}
                 </button>
             {% endif %}

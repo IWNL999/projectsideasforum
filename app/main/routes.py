@@ -5,7 +5,7 @@ from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
 from app import db, login_manager
 from app.main.forms import CommentForm, CreateGroupForm
-from app.models import User, Article, Comment, GroupModel, UserGroup, AnonymousPost
+from app.models import User, Article, Comment, GroupModel, UserGroup
 from app.main import bp
 
 
@@ -33,7 +33,7 @@ def inject_user():
 @bp.route('/')
 @bp.route('/home')
 def index():
-    latest_posts = Article.query.order_by(Article.date.desc()).limit(3).all()
+    latest_posts = Article.query.filter_by(hidden=False).order_by(Article.date.desc()).limit(3).all()
     for post in latest_posts:
         if post.author.file:
             post.author_avatar_url = url_for('static', filename=f'avatars/{post.author.file}')
@@ -51,10 +51,7 @@ def about():
 
 @bp.route('/posts')
 def posts():
-    articles = Article.query.order_by(Article.date.desc()).all()
-
-    # Дополнительная обработка для анонимных постов
-    anonymous_posts = AnonymousPost.query.order_by(AnonymousPost.date.desc()).all()
+    articles = Article.query.filter_by(hidden=False).order_by(Article.date.desc()).all()
 
     for post in articles:
         if post.author and post.author.file:
@@ -62,7 +59,7 @@ def posts():
         else:
             post.author.avatar_url = url_for('static', filename='avatars/default-avatar.png')
 
-    return render_template("posts.html", articles=articles, anonymous_posts=anonymous_posts)
+    return render_template("posts.html", articles=articles)
 
 
 @bp.route('/posts/<int:id>', methods=['GET', 'POST'])
@@ -157,24 +154,45 @@ def post_delete(id):
 
 @bp.route('/posts/<int:id>/update', methods=['POST', 'GET'])
 @login_required
-def post_update(id):
+def post_update(id, filename=None):
     article = Article.query.get(id)
-    if article.user_id != current_user.id:
-        flash('Вы не можете редактировать этот пост', 'error')
-        return redirect(f'/posts/{id}')
 
-    if request.method == "POST":
-        article.title = request.form['title']
-        article.intro = request.form['intro']
-        article.text = request.form['text']
+    # Проверяем, является ли текущий пользователь автором статьи
+    if article.author != current_user:
+        flash('Вы не можете редактировать эту статью', 'error')
+        return redirect(url_for('main.post_detail', id=id))
 
-        try:
-            db.session.commit()
-            return redirect(url_for('main.post_detail', id=id))
-        except:
-            return "При редактировании статьи произошла ошибка"
-    else:
-        return render_template("post_update.html", article=article)
+    if request.method == 'POST':
+        # Проверка наличия файла с изображением
+        new_image = request.files.get('file')
+        if new_image:
+            print("Type of new_image:", type(new_image))
+            if allowed_file(new_image.filename):
+                filename = secure_filename(new_image.filename)
+                print("Filename:", filename)
+                file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], filename)
+                new_image.save(file_path)
+                print("Image saved successfully")
+            else:
+                print("File extension not allowed")
+        else:
+            print("No image file provided")
+
+            # Обновление изображения статьи
+            article.image = filename
+
+        # Обновление остальных данных статьи
+        article.title = request.form.get('title', article.title)
+        article.intro = request.form.get('intro', article.intro)
+        article.text = request.form.get('text', article.text)
+
+        # Сохранение изменений в базе данных
+        db.session.commit()
+
+        flash('Статья успешно обновлена!', 'success')
+        return redirect(url_for('main.post_detail', id=id))
+
+    return render_template('post_update.html', article=article)
 
 
 @bp.route('/your-posts', methods=['GET', 'POST'])
@@ -287,7 +305,6 @@ def signup():
 def user_profile_by_id(user_id):
     user = User.query.get_or_404(user_id)
     form = CommentForm()
-    anonymous_posts = AnonymousPost.query.order_by(AnonymousPost.date.desc()).all()
     return render_template('profile.html', user=user, form=form)
 
 
@@ -320,10 +337,9 @@ def user_update():
 @bp.route('/search', methods=['POST'])
 def search_posts():
     search_term = request.form.get('search_term', '')
-    articles = Article.query.order_by(Article.date.desc()).all()
+    articles = Article.query.filter_by(hidden=False).order_by(Article.date.desc()).all()
 
     filtered_posts = [post for post in articles if search_term.lower() in post.title.lower()]
-    anonymous_posts = AnonymousPost.query.order_by(AnonymousPost.date.desc()).all()
 
     for post in filtered_posts:
         if post.author and post.author.file:
@@ -333,8 +349,6 @@ def search_posts():
 
     return render_template('search_results.html', search_term=search_term, articles=filtered_posts)
 
-
-# ... (ваш импорт и другой код)
 
 @bp.route('/like/<int:user_id>', methods=['POST'])
 @login_required
@@ -379,9 +393,12 @@ def groups():
             flash('Группа успешно создана!', 'success')
             return redirect(url_for('main.groups'))
         except:
+            db.session.rollback()
             flash('Ошибка при создании группы', 'danger')
 
+    # Получаем список всех групп, в которых состоит текущий пользователь
     user_groups = current_user.groups
+
     return render_template('groups.html', user_groups=user_groups, create_group_form=create_group_form)
 
 
@@ -393,25 +410,24 @@ def create_group():
     if create_group_form.validate_on_submit():
         group_name = create_group_form.group_name.data
 
-        # Создаем группу
-        new_group = GroupModel(name=group_name, author_id=current_user.id)
-
         try:
+            # Создаем группу
+            new_group = GroupModel(name=group_name, author_id=current_user.id)
             db.session.add(new_group)
-            db.session.commit()
+            db.session.commit()  # Сохраняем изменения в базе данных
 
-            # Получим ID только что созданной группы
-            group_id = new_group.id
+            # Получаем id новой группы
+            new_group_id = new_group.id
 
-            # Теперь создаем запись в таблице user_group
-            user_group = UserGroup(user_id=current_user.id, group_id=group_id)
+            # Добавляем текущего пользователя в группу
+            user_group = UserGroup(user_id=current_user.id, group_id=new_group_id)
             db.session.add(user_group)
             db.session.commit()
 
             flash('Группа успешно создана!', 'success')
 
             # Сформируем URL для перехода
-            redirect_url = url_for('main.group_details', group_id=group_id)
+            redirect_url = url_for('main.group_details', group_id=new_group_id)
 
             # Перенаправим на страницу с деталями группы
             return redirect(redirect_url)
@@ -438,22 +454,19 @@ def group_posts(group_id):
 @login_required
 def hide_post(id):
     post = Article.query.get_or_404(id)
-
-    # является ли текущий пользователь автором поста
     if post.user_id == current_user.id:
         try:
-
-            post.hidden = True
+            post.hidden = not post.hidden
             db.session.commit()
-
-            flash('Пост успешно скрыт', 'success')
+            if post.hidden:
+                flash('Пост успешно скрыт', 'success')
+            else:
+                flash('Пост успешно показан', 'success')
         except Exception as e:
-
-            flash(f'При скрытии поста произошла ошибка: {str(e)}', 'error')
+            flash(f'При изменении статуса поста произошла ошибка: {str(e)}', 'error')
     else:
+        flash('Вы не можете изменить статус этого поста', 'error')
 
-        flash('Вы не можете скрыть этот пост', 'error')
-
-    # Независимо от результата, перенаправляем пользователя на страницу с постом
     return redirect(f'/posts/{id}')
+
 

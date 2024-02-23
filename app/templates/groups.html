@@ -12,7 +12,11 @@
   {% if user_groups %}
     <ul>
       {% for group in user_groups %}
-        <li>{{ group.name }}</li>
+        <li>
+          <form action="{{ url_for('main.group_posts', group_id=group.id) }}" method="get">
+            <button type="submit" class="btn btn-link">{{ group.name }}</button>
+          </form>
+        </li>
       {% endfor %}
     </ul>
   {% else %}
