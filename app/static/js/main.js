@@ -23,19 +23,22 @@ document.querySelectorAll('.like-button').forEach(button => {
     });
 });
 
-// Открыть модальное окно с изображением
-function openModal(imgSrc) {
+// Открыть модальное окно с изображением при клике на изображение
+document.querySelectorAll('.post-image').forEach(image => {
+    image.addEventListener('click', function() {
+        const modal = document.getElementById("myModal");
+        const modalImg = document.getElementById("img01");
+        modal.style.display = "block";
+        modalImg.src = this.src;
+    });
+});
+
+// Закрыть модальное окно при клике на кнопку закрытия
+document.querySelector('.close').addEventListener('click', function() {
     const modal = document.getElementById("myModal");
-    const modalImg = document.getElementById("img01");
+    modal.style.display = "none";
+});
 
-    modal.style.display = "block";
-    modalImg.src = imgSrc;
-}
-
-// Закрыть модальное окно
-document.getElementsByClassName("close")[0].onclick = function () {
-    document.getElementById("myModal").style.display = "none";
-}
 
 // Получаем ссылки на модальное окно и изображение
 var modal = document.getElementById("myModal");
@@ -60,25 +63,50 @@ closeButton.addEventListener('click', function() {
     modal.style.display = "none"; // Скрываем модальное окно
 });
 
-<script>
-    function hideUser() {
-        var form = document.getElementById("hide-form");
-        var formData = new FormData(form);
+// Обработчик события изменения файла
+document.getElementById('file').addEventListener('change', function(e) {
+    const fileInput = e.target;
+    const imagePreview = document.getElementById('image-preview'); // Получаем изображение для предпросмотра
 
-        fetch("/hide_user", {
-            method: "POST",
-            body: formData
-        })
-        .then(response => {
-            if (response.ok) {
-                // Обновляем контент страницы или выполняем другие действия
-                console.log("User hidden successfully");
-            } else {
-                console.error("Failed to hide user");
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-        });
+    // Очищаем предыдущее содержимое предпросмотра
+    imagePreview.innerHTML = '';
+
+    // Перебираем все выбранные файлы
+    for (const file of fileInput.files) {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                // Создаем элемент изображения для предпросмотра
+                const img = document.createElement('img');
+                img.src = event.target.result;
+                img.classList.add('img-preview');
+                imagePreview.appendChild(img); // Добавляем изображение в контейнер предпросмотра
+            };
+
+            reader.readAsDataURL(file); // Читаем содержимое файла как URL
+        }
     }
-</script>
+});
+
+// Функция для скрытия пользователя
+function hideUser() {
+    var form = document.getElementById("hide-form");
+    var formData = new FormData(form);
+
+    fetch("/hide_user", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            // Обновляем контент страницы или выполняем другие действия
+            console.log("User hidden successfully");
+        } else {
+            console.error("Failed to hide user");
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+    });
+}

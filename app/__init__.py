@@ -22,7 +22,7 @@ def create_app():
     app.config['UPLOAD_FOLDER_AVATARS'] = UPLOAD_FOLDER_AVATARS
 
     # Установка пути к папке загрузки файлов для картинок постов
-    UPLOAD_FOLDER_POST_PICTURES = 'static/post_pictures'
+    UPLOAD_FOLDER_POST_PICTURES = os.path.join('app', 'static', 'post_pictures')
     app.config['UPLOAD_FOLDER_POST_PICTURES'] = UPLOAD_FOLDER_POST_PICTURES
 
     # Установка максимального размера загружаемого файла

@@ -535,3 +535,75 @@ a:hover {
     text-decoration: none;
     cursor: pointer;
 }
+
+.author-link {
+    color: #333; /* Цвет текста для ссылки на автора группы */
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.join-button {
+    border-radius: 5px; /* Радиус скругления углов */
+    background-color: orange; /* Оранжевый фон */
+    color: white; /* Белый цвет текста */
+    padding: 5px 10px; /* Отступы внутри кнопки */
+    border: none; /* Убираем границу */
+    cursor: pointer; /* Изменяем курсор при наведении */
+    margin-bottom: 10px; /* Отступ снизу */
+}
+
+.join-button:hover {
+    background-color: darkorange; /* Оранжевый фон при наведении */
+}
+
+
+.join-code-input {
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.group-name {
+    background-color: orange;
+    padding: 3px 8px;
+    border-radius: 3px;
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    margin-left: 5px;
+}
+
+.group-name:hover {
+    background-color: darkorange;
+}
+
+.group-name.dark-text {
+    color: #333; /* Тёмно-серый цвет текста */
+}
+
+/
+.post-image-add{
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.btn-update{
+    margin-top: 10px;
+}
+
+.img-avatar-group-post{
+    width: 96px;
+    height: 96px;
+}
+
+.group-post{
+    margin-left: 15px;
+}
+
+.post-image-edit {
+    max-width: 300px; /* Максимальная ширина изображения */
+    max-height: 200px; /* Максимальная высота изображения */
+}

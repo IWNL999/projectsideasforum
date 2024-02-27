@@ -1,32 +1,108 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Обновление статьи
+    Обновление статьи
 {% endblock %}
 
 {% block content %}
 
 <div class="container mt-5">
-
     {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul class="flashes">
-          {% for message in messages %}
-            <li>{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
     {% endwith %}
 
     <h1>Обновление статьи</h1>
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" id="update-form">
         <input type="text" name="title" id="title" class="form-control" value="{{ article.title }}" placeholder="Введите название"><br>
         <textarea name="intro" id="intro" class="form-control" placeholder="Введите анонс">{{ article.intro }}</textarea><br>
         <textarea name="text" id="text" class="form-control" placeholder="Введите основной текст">{{ article.text }}</textarea><br>
+        <input type="hidden" name="existing_file" value="{{ article.file }}">
+
+        <div class="form-group">
+            <label>Выберите место публикации:</label><br>
+            <input type="radio" id="all" name="groups" value="all">
+            <label for="all">Все</label><br>
+            {% set displayed_groups = {} %}
+            {% for group in groups %}
+                {% if group.id not in displayed_groups %}
+                    <input type="radio" id="group_{{ group.id }}" name="groups" value="{{ group.id }}" {% if group.id in selected_groups %}checked{% endif %}>
+                    <label for="group_{{ group.id }}">{{ group.name }}</label><br>
+                    {% set _ = displayed_groups.update({group.id: True}) %}
+                {% endif %}
+            {% endfor %}
+            <!-- Добавим также группы, автором которых является текущий пользователь -->
+            {% for author_group in current_user.authored_groups %}
+                {% if author_group.id not in displayed_groups %}
+                    <input type="radio" id="author_group_{{ author_group.id }}" name="groups" value="{{ author_group.id }}" {% if author_group.id in selected_groups %}checked{% endif %}>
+                    <label for="author_group_{{ author_group.id }}">{{ author_group.name }}</label><br>
+                    {% set _ = displayed_groups.update({author_group.id: True}) %}
+                {% endif %}
+            {% endfor %}
+            <!-- Добавим группы, в которых пользователь состоит -->
+            {% for group in current_user.groups %}
+                {% if group not in current_user.authored_groups %}
+                    {% if group.id not in displayed_groups %}
+                        <input type="radio" id="user_group_{{ group.id }}" name="groups" value="{{ group.id }}" {% if group.id in selected_groups %}checked{% endif %}>
+                        <label for="user_group_{{ group.id }}">{{ group.name }}</label><br>
+                        {% set _ = displayed_groups.update({group.id: True}) %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            <p>Выбранная группа: {{ selected_groups[0] if selected_groups else None }}</p> <!-- Отображаем выбранную группу -->
+        </div>
+
         <!-- Поле для загрузки изображения -->
-        <input type="file" name="file" id="file" class="form-control-file" accept="image/*">
+        <label for="file" class="btn btn-primary join-code-input">
+            Выберите новое изображение
+            <input type="file" name="file" id="file" style="display:none" accept="image/*" multiple="true">
+        </label>
+
+        <div id="image-preview-container">
+            {% if article.file %}
+                <img id="image-preview" src="{{ url_for('static', filename='post_pictures/' + article.file) }}" class="img-preview post-image-edit">
+            {% else %}
+                <p>No image available</p>
+            {% endif %}
+        </div>
+
         <br>
-        <input type="submit" class="btn btn-success" value="Обновить">
+        <input type="submit" class="btn btn-success btn-update" value="Обновить">
     </form>
 </div>
+
+<script>
+document.getElementById('file').addEventListener('change', function(e) {
+    const fileInput = e.target;
+    const imagePreviewContainer = document.getElementById('image-preview-container');
+
+    // Очистка контейнера предпросмотра перед добавлением новых изображений
+    imagePreviewContainer.innerHTML = '';
+
+    // Перебор всех выбранных файлов
+    for (const file of fileInput.files) {
+        if (file.type.startsWith('image/')) { // Проверка, что файл является изображением
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                // Создание элемента изображения для предпросмотра
+                const img = document.createElement('img');
+                img.src = event.target.result;
+                img.classList.add('img-preview', 'post-image-edit'); // Добавление класса post-image-edit
+                const index = Array.from(imagePreviewContainer.children).filter(child => child.tagName === 'IMG').length; // Получение индекса
+                img.id = `image-preview-${index}`; // Установка уникального ID
+                imagePreviewContainer.appendChild(img); // Добавление изображения в контейнер предпросмотра
+            };
+
+            reader.readAsDataURL(file); // Чтение содержимого файла как URL
+        }
+    }
+});
+</script>
+
 {% endblock %}

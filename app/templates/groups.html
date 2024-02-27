@@ -1,27 +1,52 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Список групп
+Ваши группы
 {% endblock %}
 
 {% block content %}
+<div class="container">
+    <h1>Ваши группы</h1>
 
-<div class="container mt-5">
-  <h1>Список групп</h1>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
 
-  {% if user_groups %}
-    <ul>
-      {% for group in user_groups %}
-        <li>
-          <form action="{{ url_for('main.group_posts', group_id=group.id) }}" method="get">
-            <button type="submit" class="btn btn-link">{{ group.name }}</button>
-          </form>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>Вы не состоите ни в одной группе.</p>
-  {% endif %}
+    <form action="{{ url_for('main.join_group') }}" method="POST">
+        <input class="join-code-input" type="text" name="join_code" placeholder="Введите код группы">
+        <button class="join-button" type="submit">Присоединиться</button>
+    </form>
+
+    {% if user_groups|length > 0 %}
+       {% for group in user_groups %}
+            <div class="alert alert-info perenos your">
+                <div class="d-flex justify-content-between">
+                    <div class="group-info d-flex align-items-center">
+                        {% if group.author.avatar_url %}
+                            <a class="user-link" href='/profile/{{ group.author.id }}'>
+                                <img class="img-avatar" src="{{ group.author.avatar_url }}" alt="{{ group.author.login }} Avatar">
+                            </a>
+                        {% else %}
+                            <a class="user-link" href='/profile/{{ group.author.id }}'>
+                                <img class="img-avatar" src="{{ url_for('static', filename='default-avatar.png') }}" alt="Default Avatar">
+                            </a>
+                        {% endif %}
+                        <div class="group-details ml-2">
+                            <a class="group-name dark-text" href="{{ url_for('main.group_posts', group_id=group.id) }}">{{ group.name }}</a>
+                            <p>Создатель: <a href='/profile/{{ group.author.id }}' class="author-link text-dark-gray">@{{ group.author.login }}</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+    <p>Вы пока не состоите в ни одной группе</p>
+    {% endif %}
 </div>
-
 {% endblock %}

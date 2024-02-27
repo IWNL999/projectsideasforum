@@ -1,29 +1,52 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Посты группы {{ group.name }}
+    Посты группы {{ group.name }}
 {% endblock %}
 
 {% block content %}
+<div class="container mt-4">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
 
-<div class="container mt-5">
-    <h1>Посты группы {{ group.name }}</h1>
+    <div class="">
+        <h1>Посты группы {{ group.name }}</h1>
 
-    <div class="group_posts">
         {% for post in group_posts %}
             <div class="alert alert-info perenos">
-                <h3>{{ post.title }}</h3>
-                <p>{{ post.intro }}</p>
-                <p><b>Дата: {{ post.date.date() }}</b></p>
-                <div class="detalnee-delete d-flex justify-content-between align-items-center">
-                    <a href="{{ url_for('main.post_details', id=post.id) }}" class="btn btn-warning">Детальнее</a>
-                    <!-- Добавьте кнопку "удалить" только если текущий пользователь - автор поста -->
-                    {% if current_user.is_authenticated and current_user.id == post.author.id %}
-                        <form method="post" action="{{ url_for('main.post_delete', id=post.id) }}">
-                            {{ form.hidden_tag() }}
-                            <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
-                        </form>
-                    {% endif %}
+                <div class="d-flex align-items-start">
+                    <div>
+                        <a class="user-link" href='/profile/{{ post.author.id }}'>
+                            <img class="img-avatar img-avatar-group-post" src="{{ post.author.avatar_url }}" alt="{{ post.author.login }} Avatar">
+                        </a>
+                    </div>
+                    <div class="ml-3 group-post">
+                        <h3>{{ post.title }}</h3>
+                        <p>{{ post.intro }}</p>
+                        <p><b>Дата: {{ post.date.date() }}</b></p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="/posts/{{ post.id }}" class="btn btn-warning btn-det">Детальнее</a>
+
+                            {% if current_user.is_authenticated and current_user.id == post.author.id %}
+                                <form class="btn-del" method="post" action="{{ url_for('main.post_delete', id=post.id) }}?next={{ request.path }}">
+                                    {{ form.hidden_tag() }}
+                                    <button type="submit" class="btn btn-danger btn-sm btn-del2">Удалить</button>
+                                </form>
+
+                                <form class="btn-hide" method="post" action="{{ url_for('main.hide_post', id=post.id) }}?next={{ request.path }}">
+                                    {{ form.hidden_tag() }}
+                                    <button type="submit" class="btn btn-secondary btn-sm">Скрыть</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         {% endfor %}
@@ -33,5 +56,6 @@
         {% endif %}
     </div>
 </div>
-
 {% endblock %}
+
+

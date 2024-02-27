@@ -1,4 +1,5 @@
 import os
+import secrets
 from sqlalchemy import UniqueConstraint
 from flask import current_app, url_for
 from app import db, bcrypt
@@ -37,13 +38,22 @@ class GroupModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
+    join_code = db.Column(db.String(20), unique=True, nullable=False)
 
     user_groups = db.relationship('UserGroup', back_populates='group')
-
     author = db.relationship('User', back_populates='authored_groups', foreign_keys=[author_id])
     members = db.relationship('User', secondary='user_group', back_populates='groups')
 
     posts = db.relationship('Article', back_populates='group')
+
+    def __init__(self, name, author_id):
+        self.name = name
+        self.author_id = author_id
+        self.join_code = self.generate_join_code()
+
+    # генерация случайной ссылки для входа
+    def generate_join_code(self):
+        return secrets.token_urlsafe(6)
 
 
 class User(UserMixin, db.Model):
@@ -56,7 +66,7 @@ class User(UserMixin, db.Model):
     description = db.Column(db.String(255))
     comments = db.Column(db.Text)
     recipient_id = db.Column(db.Integer, db.ForeignKey('users1.id'))
-    group_id = db.Column(db.Integer, db.ForeignKey('group_table.id'))
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
     user_articles = db.relationship("Article", back_populates="author")
     user_comments = db.relationship("Comment", back_populates="author")
     user_groups = db.relationship('UserGroup', back_populates='user', foreign_keys=[UserGroup.user_id])
@@ -165,23 +175,21 @@ class Article(db.Model):
     text = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
-    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))  # Внешний ключ для связи с таблицей groups
-    file = db.Column(db.String(255))  # столбец для хранения пути к файлу
+    file = db.Column(db.String(255))
     hidden = db.Column(db.Boolean, default=False)
-    visibility = db.Column(db.String(255))  # столбец для хранения информации о видимости поста
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))  # Здесь изменено на Integer
 
     comments = db.relationship("Comment", cascade="all, delete-orphan", backref="article")
-    group = db.relationship('GroupModel', back_populates='posts')
     author = db.relationship('User', back_populates='user_articles', foreign_keys=[user_id])
+    group = db.relationship('GroupModel', back_populates='posts')
 
-    def __init__(self, title, intro, text, user_id, group_id=None, file=None, visibility=None):
+    def __init__(self, title, intro, text, user_id, file=None, group_id=None):
         self.title = title
         self.intro = intro
         self.text = text
         self.user_id = user_id
-        self.group_id = group_id
         self.file = file
-        self.visibility = visibility
+        self.group_id = group_id
 
     def author_name(self):
         user = User.query.get(self.user_id)

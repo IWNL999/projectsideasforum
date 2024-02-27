@@ -1,3 +1,4 @@
+import json
 import os
 from flask import render_template, url_for, request, redirect, flash, current_app, g, abort, jsonify
 from sqlalchemy.exc import IntegrityError
@@ -110,7 +111,6 @@ def create_article():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file_path = os.path.join(current_app.root_path, 'static', 'post_pictures', filename)
-            file_path = file_path.replace('\\', '/')  # Заменяем обратные слеши на прямые
             file.save(file_path)
 
         article = Article(title=title, intro=intro, text=text, user_id=current_user.id, file=filename)
@@ -163,28 +163,43 @@ def post_update(id, filename=None):
         return redirect(url_for('main.post_detail', id=id))
 
     if request.method == 'POST':
-        # Проверка наличия файла с изображением
-        new_image = request.files.get('file')
-        if new_image:
-            print("Type of new_image:", type(new_image))
-            if allowed_file(new_image.filename):
-                filename = secure_filename(new_image.filename)
-                print("Filename:", filename)
-                file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], filename)
-                new_image.save(file_path)
-                print("Image saved successfully")
-            else:
-                print("File extension not allowed")
-        else:
-            print("No image file provided")
+        # Получаем список файлов из запроса
+        new_images = request.files.getlist('file')
+        if new_images:
+            for new_image in new_images:
+                if allowed_file(new_image.filename):
+                    filename = secure_filename(new_image.filename)
+                    file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], filename)
+                    new_image.save(file_path)
+                    print("Image saved successfully")
 
-            # Обновление изображения статьи
-            article.image = filename
+                    # Добавляем новое имя файла к существующему списку
+                    if article.file:
+                        article.file += ',' + filename
+                    else:
+                        article.file = filename
+
+            # Сохраняем изменения в базе данных
+            db.session.commit()
+
+            flash('Изображения успешно добавлены!', 'success')
+            return redirect(url_for('main.post_detail', id=id))
+        else:
+            print("No image files provided")
 
         # Обновление остальных данных статьи
         article.title = request.form.get('title', article.title)
         article.intro = request.form.get('intro', article.intro)
         article.text = request.form.get('text', article.text)
+
+        # Обновление параметра group_id
+        selected_groups = request.form.getlist('groups')
+        if 'all' in selected_groups:  # Если выбрана опция "Все", то group_id будет None
+            article.group_id = None
+        else:
+            # Выбираем первую выбранную группу (если есть) и обновляем group_id
+            group_id = selected_groups[0] if selected_groups else None
+            article.group_id = group_id
 
         # Сохранение изменений в базе данных
         db.session.commit()
@@ -192,7 +207,8 @@ def post_update(id, filename=None):
         flash('Статья успешно обновлена!', 'success')
         return redirect(url_for('main.post_detail', id=id))
 
-    return render_template('post_update.html', article=article)
+    groups = GroupModel.query.all()
+    return render_template('post_update.html', article=article, groups=groups)
 
 
 @bp.route('/your-posts', methods=['GET', 'POST'])
@@ -379,27 +395,17 @@ def like_user(user_id):
 @bp.route('/groups', methods=['GET', 'POST'])
 @login_required
 def groups():
-    create_group_form = CreateGroupForm()
-
-    if create_group_form.validate_on_submit():
-        group_name = create_group_form.group_name.data
-
-        new_group = GroupModel(name=group_name)
-        new_group.members.append(current_user)
-
-        try:
-            db.session.add(new_group)
-            db.session.commit()
-            flash('Группа успешно создана!', 'success')
-            return redirect(url_for('main.groups'))
-        except:
-            db.session.rollback()
-            flash('Ошибка при создании группы', 'danger')
-
     # Получаем список всех групп, в которых состоит текущий пользователь
     user_groups = current_user.groups
 
-    return render_template('groups.html', user_groups=user_groups, create_group_form=create_group_form)
+    # Обновляем аватары авторов групп
+    for group in user_groups:
+        if group.author and group.author.file:
+            group.author.avatar_url = url_for('static', filename=f'avatars/{group.author.file}')
+        else:
+            group.author.avatar_url = url_for('static', filename='avatars/default-avatar.png')
+
+    return render_template('groups.html', user_groups=user_groups)
 
 
 @bp.route('/groups/create-group', methods=['GET', 'POST'])
@@ -445,9 +451,42 @@ def create_group():
 def group_posts(group_id):
     group = GroupModel.query.get_or_404(group_id)
 
-    group_posts = group.posts  # Предполагаем, что у группы есть атрибут posts с постами
+    # Проверяем, есть ли у пользователя привязка к этой группе
+    if group not in current_user.groups:
+        flash('Вы не являетесь участником этой группы.', 'danger')
+        return redirect(url_for('где-то перенаправление, если пользователь не участник группы'))
 
-    return render_template('group-posts.html', group=group, group_posts=group_posts)
+    # Получаем все посты из выбранной группы
+    group_posts = group.posts
+
+    # Загружаем аватары для авторов постов
+    for post in group_posts:
+        post.author.avatar_url = post.author.get_avatar_url()
+
+    # Создаем экземпляр формы CreateGroupForm
+    form = CreateGroupForm()
+
+    return render_template('group-posts.html', group=group, group_posts=group_posts, form=form)
+
+
+@bp.route('/groups/join', methods=['POST'])
+@login_required
+def join_group():
+    join_code = request.form.get('join_code')
+
+    group = GroupModel.query.filter_by(join_code=join_code).first()
+
+    if group:
+        if current_user not in group.members:
+            group.members.append(current_user)
+            db.session.commit()
+            flash('Вы успешно присоединились к группе!', 'success')
+        else:
+            flash('Вы уже состоите в этой группе.', 'info')
+    else:
+        flash('Неверный код группы. Попробуйте снова.', 'danger')
+
+    return redirect(url_for('main.groups'))
 
 
 @bp.route('/posts/<int:id>/hide', methods=['POST'])
