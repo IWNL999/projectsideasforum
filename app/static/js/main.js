@@ -110,3 +110,59 @@ function hideUser() {
         console.error("Error:", error);
     });
 }
+
+//удаление картинки у поста
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('file').addEventListener('change', function(e) {
+        const fileInput = e.target;
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+
+        // Очистка контейнера предпросмотра перед добавлением новых изображений
+        imagePreviewContainer.innerHTML = '';
+
+        // Перебор всех выбранных файлов
+        for (const file of fileInput.files) {
+            if (file.type.startsWith('image/')) { // Проверка, что файл является изображением
+                const reader = new FileReader();
+
+                reader.onload = function(event) {
+                    // Создание элемента изображения для предпросмотра
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    img.classList.add('img-preview', 'post-image-edit'); // Добавление класса post-image-edit
+                    const index = Array.from(imagePreviewContainer.children).filter(child => child.tagName === 'IMG').length; // Получение индекса
+                    img.id = `image-preview-${index}`; // Установка уникального ID
+                    imagePreviewContainer.appendChild(img); // Добавление изображения в контейнер предпросмотра
+                };
+
+                reader.readAsDataURL(file); // Чтение содержимого файла как URL
+            }
+        }
+    });
+
+    document.querySelectorAll('.delete-image').forEach(button => {
+        button.addEventListener('click', async function() {
+            const imageFilename = button.dataset.image;
+            const postId = button.dataset.postId;  // Передаем ID статьи через data-post-id атрибут кнопки
+            try {
+                const response = await fetch(`/posts/${postId}/delete_image/${imageFilename}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ filename: imageFilename })
+                });
+                if (response.ok) {
+                    // Успешно удалено, скрываем изображение
+                    button.closest('.image-container').remove();
+                } else {
+                    console.error('Failed to delete image');
+                }
+            } catch (error) {
+                console.error('Error deleting image:', error);
+            }
+        });
+    });
+});
+
+

@@ -175,7 +175,7 @@ class Article(db.Model):
     text = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
-    file = db.Column(db.String(255))
+    file = db.Column(db.String(1000))
     hidden = db.Column(db.Boolean, default=False)
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))  # Здесь изменено на Integer
 

@@ -59,50 +59,31 @@
 
         <!-- Поле для загрузки изображения -->
         <label for="file" class="btn btn-primary join-code-input">
-            Выберите новое изображение
+            Выберите новые изображения
             <input type="file" name="file" id="file" style="display:none" accept="image/*" multiple="true">
         </label>
 
         <div id="image-preview-container">
             {% if article.file %}
-                <img id="image-preview" src="{{ url_for('static', filename='post_pictures/' + article.file) }}" class="img-preview post-image-edit">
+                {% for image in article.file.split(',') %}
+                    <div class="image-container">
+                        <img src="{{ url_for('static', filename='post_pictures/' + image) }}" class="img-preview post-image-edit">
+                        <form action="{{ url_for('main.delete_post_image', id=article.id, filename=image) }}" method="post">
+                            <button type="submit" class="btn btn-danger delete-image" data-image="{{ image }}">Удалить</button>
+                        </form>
+                    </div>
+                {% endfor %}
             {% else %}
                 <p>No image available</p>
             {% endif %}
         </div>
-
         <br>
         <input type="submit" class="btn btn-success btn-update" value="Обновить">
     </form>
 </div>
 
-<script>
-document.getElementById('file').addEventListener('change', function(e) {
-    const fileInput = e.target;
-    const imagePreviewContainer = document.getElementById('image-preview-container');
+{% endblock %}
 
-    // Очистка контейнера предпросмотра перед добавлением новых изображений
-    imagePreviewContainer.innerHTML = '';
-
-    // Перебор всех выбранных файлов
-    for (const file of fileInput.files) {
-        if (file.type.startsWith('image/')) { // Проверка, что файл является изображением
-            const reader = new FileReader();
-
-            reader.onload = function(event) {
-                // Создание элемента изображения для предпросмотра
-                const img = document.createElement('img');
-                img.src = event.target.result;
-                img.classList.add('img-preview', 'post-image-edit'); // Добавление класса post-image-edit
-                const index = Array.from(imagePreviewContainer.children).filter(child => child.tagName === 'IMG').length; // Получение индекса
-                img.id = `image-preview-${index}`; // Установка уникального ID
-                imagePreviewContainer.appendChild(img); // Добавление изображения в контейнер предпросмотра
-            };
-
-            reader.readAsDataURL(file); // Чтение содержимого файла как URL
-        }
-    }
-});
-</script>
-
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/post_update.js') }}"></script>
 {% endblock %}
