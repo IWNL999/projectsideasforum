@@ -18,7 +18,7 @@
     {% endwith %}
 
     <h1>Обновление статьи</h1>
-    <form method="post" enctype="multipart/form-data" id="update-form">
+    <form method="post" enctype="multipart/form-data" id="update-form" action="{{ url_for('main.post_update', id=article.id) }}">
         <input type="text" name="title" id="title" class="form-control" value="{{ article.title }}" placeholder="Введите название"><br>
         <textarea name="intro" id="intro" class="form-control" placeholder="Введите анонс">{{ article.intro }}</textarea><br>
         <textarea name="text" id="text" class="form-control" placeholder="Введите основной текст">{{ article.text }}</textarea><br>
@@ -63,27 +63,62 @@
             <input type="file" name="file" id="file" style="display:none" accept="image/*" multiple="true">
         </label>
 
-        <div id="image-preview-container">
-            {% if article.file %}
-                {% for image in article.file.split(',') %}
-                    <div class="image-container">
-                        <img src="{{ url_for('static', filename='post_pictures/' + image) }}" class="img-preview post-image-edit">
-                        <form action="{{ url_for('main.delete_post_image', id=article.id, filename=image) }}" method="post">
-                            <button type="submit" class="btn btn-danger delete-image" data-image="{{ image }}">Удалить</button>
-                        </form>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p>No image available</p>
-            {% endif %}
+        <div id="image-preview-container" class="mt-3">
+            <div id="file-preview-container"></div>
+            <div class="existing-images">
+                <!-- Вставляем HTML-код для предпросмотра и кнопки удаления изображения -->
+                {% if article.file %}
+                    {% for image in article.file.split(',') %}
+                        <div class="image-container">
+                            <img src="{{ url_for('static', filename='post_pictures/' + image) }}" class="img-preview post-image-edit">
+                            <form action="{{ url_for('main.delete_post_image', id=article.id, filename=image) }}" method="post" class="delete-form">
+                                <input type="hidden" name="_method" value="DELETE">
+                                <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
         </div>
         <br>
-        <input type="submit" class="btn btn-success btn-update" value="Обновить">
+        <!-- Форма для отправки данных обновления статьи -->
+        <form action="{{ url_for('main.post_update', id=article.id) }}" method="post">
+            <button type="submit" class="btn btn-success btn-update">Обновить</button>
+        </form>
     </form>
 </div>
 
-{% endblock %}
+<script>
 
-{% block scripts %}
-    <script src="{{ url_for('static', filename='js/post_update.js') }}"></script>
+// Обработчик события изменения файла
+document.getElementById('file').addEventListener('change', async function(e) {
+    const fileInput = e.target;
+    const filePreviewContainer = document.getElementById('file-preview-container');
+
+    // Очистка контейнера предпросмотра перед добавлением новых изображений
+    filePreviewContainer.innerHTML = '';
+
+    // Перебор всех выбранных файлов
+    for (const file of fileInput.files) {
+        if (file.type.startsWith('image/')) { // Проверка, что файл является изображением
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                // Создание элемента изображения для предпросмотра
+                const img = document.createElement('img');
+                img.src = event.target.result;
+                img.classList.add('img-preview', 'post-image-edit'); // Добавление класса post-image-edit
+                const index = Array.from(filePreviewContainer.children).filter(child => child.tagName === 'IMG').length; // Получение индекса
+                img.id = `image-preview-${index}`; // Установка уникального ID
+                filePreviewContainer.appendChild(img); // Добавление изображения в контейнер предпросмотра
+            };
+
+            reader.readAsDataURL(file); // Чтение содержимого файла как URL
+        }
+    }
+});
+
+
+</script>
+
 {% endblock %}
