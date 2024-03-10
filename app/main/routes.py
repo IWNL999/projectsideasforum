@@ -39,6 +39,7 @@ def allowed_file(filename):
 
 
 @bp.route('/')
+@bp.route('/projectsideas/')
 @bp.route('/home')
 def index():
     latest_posts = Article.query.filter_by(hidden=False).order_by(Article.date.desc()).limit(3).all()
