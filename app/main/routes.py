@@ -166,7 +166,7 @@ def post_delete(id):
 @bp.route('/posts/<int:id>/update', methods=['POST', 'GET'])
 @login_required
 def post_update(id):
-    article = Article.query.get(id)
+    article = Article.query.get_or_404(id)
 
     # Проверяем, является ли текущий пользователь автором статьи
     if article.author != current_user:
@@ -190,6 +190,33 @@ def post_update(id):
                     else:
                         article.file = filename
 
+            # Сохраняем изменения в базе данных
+            db.session.commit()
+
+        # Проверяем, был ли отправлен запрос на удаление изображения
+        if 'delete_image' in request.form:
+            filename_to_delete = request.form['delete_image']
+            if filename_to_delete in article.file.split(','):
+                try:
+                    # Удаляем файл изображения из папки
+                    file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], filename_to_delete)
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+
+                    # Удаляем имя файла из списка файлов в статье
+                    file_list = article.file.split(',')
+                    file_list.remove(filename_to_delete)
+                    article.file = ','.join(file_list)
+
+                    # Сохраняем изменения в базе данных
+                    db.session.commit()
+
+                    flash('Изображение успешно удалено', 'success')
+                except Exception as e:
+                    flash(f'Ошибка при удалении изображения: {str(e)}', 'error')
+            else:
+                flash('Изображение не найдено в статье', 'error')
+
         # Обновление остальных данных статьи
         article.title = request.form.get('title', article.title)
         article.intro = request.form.get('intro', article.intro)
@@ -212,43 +239,6 @@ def post_update(id):
 
     groups = GroupModel.query.all()
     return render_template('post_update.html', article=article, groups=groups)
-
-
-@bp.route('/posts/<int:id>/delete_image/<filename>', methods=['POST', 'DELETE'])
-@login_required
-def delete_post_image(id, filename):
-    if request.method == 'DELETE':
-        post = Article.query.get_or_404(id)
-
-        # Проверяем, является ли пользователь автором статьи
-        if post.author != current_user:
-            flash('Вы не можете удалять изображения этой статьи', 'error')
-            return redirect(url_for('main.post_detail', id=id))
-
-        # Проверяем, существует ли изображение в списке файлов статьи
-        if filename in post.file.split(','):
-            try:
-                # Удаляем файл изображения из папки
-                file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], filename)
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-
-                # Удаляем имя файла из списка файлов в статье
-                file_list = post.file.split(',')
-                file_list.remove(filename)
-                post.file = ','.join(file_list)
-
-                # Сохраняем изменения в базе данных
-                db.session.commit()
-
-                flash('Изображение успешно удалено', 'success')
-                return redirect(url_for('main.post_detail', id=id))
-            except Exception as e:
-                flash(f'При удалении изображения произошла ошибка: {str(e)}', 'error')
-                return redirect(url_for('main.post_detail', id=id))
-        else:
-            flash('Изображение не найдено в статье', 'error')
-            return redirect(url_for('main.post_detail', id=id))
 
 
 @bp.route('/your-posts', methods=['GET', 'POST'])

@@ -169,3 +169,37 @@ document.querySelectorAll('#image-preview-container .btn-danger, .existing-image
         }
     });
 });
+
+
+
+@bp.route('/posts/<int:id>/delete_image/<filename>', methods=['POST', 'DELETE'])
+@login_required
+def delete_post_image(id, filename):
+    if request.method == 'DELETE':
+        post = Article.query.get_or_404(id)
+
+        # Проверяем, является ли пользователь автором статьи
+        if post.author != current_user:
+            return jsonify({'message': 'Вы не можете удалять изображения этой статьи'}), 403
+
+        # Проверяем, существует ли изображение в списке файлов статьи
+        if filename in post.file.split(','):
+            try:
+                # Удаляем файл изображения из папки
+                file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], filename)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+                # Удаляем имя файла из списка файлов в статье
+                file_list = post.file.split(',')
+                file_list.remove(filename)
+                post.file = ','.join(file_list)
+
+                # Сохраняем изменения в базе данных
+                db.session.commit()
+
+                return jsonify({'message': 'Изображение успешно удалено'}), 200
+            except Exception as e:
+                return jsonify({'message': f'При удалении изображения произошла ошибка: {str(e)}'}), 500
+        else:
+            return jsonify({'message': 'Изображение не найдено в статье'}), 404

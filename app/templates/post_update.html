@@ -18,7 +18,7 @@
     {% endwith %}
 
     <h1>Обновление статьи</h1>
-    <form method="post" enctype="multipart/form-data" id="update-form" action="{{ url_for('main.post_update', id=article.id) }}">
+    <form method="post" action="{{ url_for('main.post_update', id=article.id) }}" enctype="multipart/form-data">
         <input type="text" name="title" id="title" class="form-control" value="{{ article.title }}" placeholder="Введите название"><br>
         <textarea name="intro" id="intro" class="form-control" placeholder="Введите анонс">{{ article.intro }}</textarea><br>
         <textarea name="text" id="text" class="form-control" placeholder="Введите основной текст">{{ article.text }}</textarea><br>
@@ -63,62 +63,66 @@
             <input type="file" name="file" id="file" style="display:none" accept="image/*" multiple="true">
         </label>
 
-        <div id="image-preview-container" class="mt-3">
-            <div id="file-preview-container"></div>
-            <div class="existing-images">
-                <!-- Вставляем HTML-код для предпросмотра и кнопки удаления изображения -->
-                {% if article.file %}
-                    {% for image in article.file.split(',') %}
-                        <div class="image-container">
-                            <img src="{{ url_for('static', filename='post_pictures/' + image) }}" class="img-preview post-image-edit">
-                            <form action="{{ url_for('main.delete_post_image', id=article.id, filename=image) }}" method="post" class="delete-form">
-                                <input type="hidden" name="_method" value="DELETE">
-                                <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
-                            </form>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            </div>
+        <div id="file-preview-container"></div> <!-- Здесь будет отображаться предпросмотр новых изображений -->
+        <div id="existing-images-preview">
+            {% if article.file %}
+                {% for image in article.file.split(',') %}
+                    <div class="image-container">
+                        <img src="{{ url_for('static', filename='post_pictures/' + image) }}" class="img-preview post-image-edit">
+                        <form method="post" class="delete-form" action="{{ url_for('main.post_update', id=article.id) }}">
+                            <input type="hidden" name="delete_image" value="{{ image }}">
+                            <button type="submit" class="btn btn-danger btn-sm delete-btn">Удалить</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% endif %}
         </div>
         <br>
         <!-- Форма для отправки данных обновления статьи -->
-        <form action="{{ url_for('main.post_update', id=article.id) }}" method="post">
-            <button type="submit" class="btn btn-success btn-update">Обновить</button>
-        </form>
+        <button type="submit" class="btn btn-success btn-update">Обновить</button>
     </form>
 </div>
 
 <script>
+document.getElementById('file').addEventListener('change', function(e) {
+    const files = e.target.files;
+    const previewContainer = document.getElementById('file-preview-container');
 
-// Обработчик события изменения файла
-document.getElementById('file').addEventListener('change', async function(e) {
-    const fileInput = e.target;
-    const filePreviewContainer = document.getElementById('file-preview-container');
+    // Очищаем контейнер предпросмотра перед добавлением новых изображений
+    previewContainer.innerHTML = '';
 
-    // Очистка контейнера предпросмотра перед добавлением новых изображений
-    filePreviewContainer.innerHTML = '';
+    // Перебираем загруженные файлы и создаем превью для каждого из них
+    for (const file of files) {
+        const reader = new FileReader();
 
-    // Перебор всех выбранных файлов
-    for (const file of fileInput.files) {
-        if (file.type.startsWith('image/')) { // Проверка, что файл является изображением
-            const reader = new FileReader();
+        reader.onload = function(event) {
+            const imgElement = document.createElement('img');
+            imgElement.src = event.target.result;
+            imgElement.classList.add('img-preview', 'post-image-edit');
 
-            reader.onload = function(event) {
-                // Создание элемента изображения для предпросмотра
-                const img = document.createElement('img');
-                img.src = event.target.result;
-                img.classList.add('img-preview', 'post-image-edit'); // Добавление класса post-image-edit
-                const index = Array.from(filePreviewContainer.children).filter(child => child.tagName === 'IMG').length; // Получение индекса
-                img.id = `image-preview-${index}`; // Установка уникального ID
-                filePreviewContainer.appendChild(img); // Добавление изображения в контейнер предпросмотра
-            };
+            // Создаем контейнер для изображения и кнопки удаления
+            const imageContainer = document.createElement('div');
+            imageContainer.classList.add('image-container');
+            imageContainer.appendChild(imgElement);
 
-            reader.readAsDataURL(file); // Чтение содержимого файла как URL
-        }
+            // Создаем кнопку удаления
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Удалить';
+            deleteButton.classList.add('btn', 'btn-danger', 'btn-sm', 'delete-btn');
+            deleteButton.addEventListener('click', function() {
+                deleteImage(file.name);
+                imageContainer.remove(); // Удаляем изображение из DOM после удаления
+            });
+
+            // Добавляем кнопку удаления в контейнер предпросмотра
+            imageContainer.appendChild(deleteButton);
+            previewContainer.appendChild(imageContainer);
+        };
+
+        // Читаем файл как Data URL
+        reader.readAsDataURL(file);
     }
 });
-
-
 </script>
 
 {% endblock %}
