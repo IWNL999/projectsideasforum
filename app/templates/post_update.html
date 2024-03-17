@@ -18,7 +18,7 @@
     {% endwith %}
 
     <h1>Обновление статьи</h1>
-    <form method="post" action="{{ url_for('main.post_update', id=article.id) }}" enctype="multipart/form-data">
+    <form id="update-form" method="post" action="{{ url_for('main.post_update', id=article.id) }}" enctype="multipart/form-data" onsubmit="updatePost(event)">
         <input type="text" name="title" id="title" class="form-control" value="{{ article.title }}" placeholder="Введите название"><br>
         <textarea name="intro" id="intro" class="form-control" placeholder="Введите анонс">{{ article.intro }}</textarea><br>
         <textarea name="text" id="text" class="form-control" placeholder="Введите основной текст">{{ article.text }}</textarea><br>
@@ -67,62 +67,70 @@
         <div id="existing-images-preview">
             {% if article.file %}
                 {% for image in article.file.split(',') %}
-                    <div class="image-container">
-                        <img src="{{ url_for('static', filename='post_pictures/' + image) }}" class="img-preview post-image-edit">
-                        <form method="post" class="delete-form" action="{{ url_for('main.post_update', id=article.id) }}">
-                            <input type="hidden" name="delete_image" value="{{ image }}">
-                            <button type="submit" class="btn btn-danger btn-sm delete-btn">Удалить</button>
-                        </form>
-                    </div>
+                <div class="image-container">
+                    <img src="{{ url_for('static', filename='post_pictures/' + image) }}" class="img-preview post-image-edit">
+                    <form id="delete-image-form" method="post" style="display: inline;" onsubmit="deleteImage('{{ image }}'); return false;">
+                        <input type="hidden" name="_method" value="DELETE"> <!-- Для отправки DELETE-запроса -->
+                        <input type="hidden" name="filename" value="{{ image }}">
+                        <button type="submit" class="btn btn-danger btn-sm delete-btn" onclick="return confirm('Вы уверены, что хотите удалить это изображение?')">Удалить</button>
+                    </form>
+                </div>
                 {% endfor %}
             {% endif %}
         </div>
         <br>
-        <!-- Форма для отправки данных обновления статьи -->
-        <button type="submit" class="btn btn-success btn-update">Обновить</button>
+        <button type="submit" class="btn btn-success btn-update" onclick="updatePost('update-form')">Обновить</button>
     </form>
 </div>
 
 <script>
-document.getElementById('file').addEventListener('change', function(e) {
-    const files = e.target.files;
-    const previewContainer = document.getElementById('file-preview-container');
+function updatePost(formId) {
+    let form = document.getElementById(formId); // Получить форму по идентификатору
+    let formData = new FormData(form); // Получить данные формы
 
-    // Очищаем контейнер предпросмотра перед добавлением новых изображений
-    previewContainer.innerHTML = '';
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка обновления поста');
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert(data.message);
+        // Перенаправить на страницу деталей поста или выполнить другие действия
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Произошла ошибка при обновлении поста');
+    });
+}
 
-    // Перебираем загруженные файлы и создаем превью для каждого из них
-    for (const file of files) {
-        const reader = new FileReader();
-
-        reader.onload = function(event) {
-            const imgElement = document.createElement('img');
-            imgElement.src = event.target.result;
-            imgElement.classList.add('img-preview', 'post-image-edit');
-
-            // Создаем контейнер для изображения и кнопки удаления
-            const imageContainer = document.createElement('div');
-            imageContainer.classList.add('image-container');
-            imageContainer.appendChild(imgElement);
-
-            // Создаем кнопку удаления
-            const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Удалить';
-            deleteButton.classList.add('btn', 'btn-danger', 'btn-sm', 'delete-btn');
-            deleteButton.addEventListener('click', function() {
-                deleteImage(file.name);
-                imageContainer.remove(); // Удаляем изображение из DOM после удаления
-            });
-
-            // Добавляем кнопку удаления в контейнер предпросмотра
-            imageContainer.appendChild(deleteButton);
-            previewContainer.appendChild(imageContainer);
-        };
-
-        // Читаем файл как Data URL
-        reader.readAsDataURL(file);
-    }
-});
+// JavaScript функция для удаления картинки
+function deleteImage(image) {
+    fetch(`/posts/{{ article.id }}/delete_image/${image}`, {
+        method: 'DELETE', // Метод DELETE для удаления картинки
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка удаления изображения');
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert(data.message);
+        location.reload(); // Перезагрузить страницу после успешного удаления
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Произошла ошибка при удалении изображения');
+    });
+}
 </script>
 
 {% endblock %}

@@ -203,3 +203,75 @@ def delete_post_image(id, filename):
                 return jsonify({'message': f'При удалении изображения произошла ошибка: {str(e)}'}), 500
         else:
             return jsonify({'message': 'Изображение не найдено в статье'}), 404
+
+16.03
+
+<script>
+document.getElementById('btn-update').addEventListener('click', function() {
+    // Отправка формы
+    document.getElementById('btn-update').submit();
+});
+
+// Добавление обработчика для перенаправления после успешного обновления
+document.getElementById('update-form-1').addEventListener('submit', function(event) {
+    event.preventDefault(); // Отменяем стандартное поведение отправки формы
+
+    fetch(this.action, {
+        method: 'POST',
+        body: new FormData(this)
+    })
+    .then(response => {
+        if (response.ok) {
+            // Если запрос успешен, перенаправляем на страницу с деталями обновленной статьи
+            window.location.href = response.url;
+        } else {
+            // Если возникла ошибка, выводим сообщение об ошибке
+            console.error('Ошибка при обновлении статьи');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка при обновлении статьи:', error);
+    });
+});
+
+document.getElementById('file').addEventListener('change', function(e) {
+    const files = e.target.files;
+    const previewContainer = document.getElementById('file-preview-container');
+
+    // Очищаем контейнер предпросмотра перед добавлением новых изображений
+    previewContainer.innerHTML = '';
+
+    // Перебираем загруженные файлы и создаем превью для каждого из них
+    for (const file of files) {
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+            const imgElement = document.createElement('img');
+            imgElement.src = event.target.result;
+            imgElement.classList.add('img-preview', 'post-image-edit');
+
+            // Создаем контейнер для изображения и кнопки удаления
+            const imageContainer = document.createElement('div');
+            imageContainer.classList.add('image-container');
+            imageContainer.appendChild(imgElement);
+
+            // Создаем кнопку удаления
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Удалить';
+            deleteButton.classList.add('btn', 'btn-danger', 'btn-sm', 'delete-btn');
+            deleteButton.addEventListener('click', function() {
+                deleteImage(file.name);
+                imageContainer.remove(); // Удаляем изображение из DOM после удаления
+            });
+
+            // Добавляем кнопку удаления в контейнер предпросмотра
+            imageContainer.appendChild(deleteButton);
+            previewContainer.appendChild(imageContainer);
+        };
+
+        // Читаем файл как Data URL
+        reader.readAsDataURL(file);
+    }
+});
+
+</script>

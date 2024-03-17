@@ -39,7 +39,6 @@ def allowed_file(filename):
 
 
 @bp.route('/')
-@bp.route('/projectsideas/')
 @bp.route('/home')
 def index():
     latest_posts = Article.query.filter_by(hidden=False).order_by(Article.date.desc()).limit(3).all()
@@ -169,77 +168,81 @@ def post_delete(id):
 def post_update(id):
     article = Article.query.get_or_404(id)
 
-    # Проверяем, является ли текущий пользователь автором статьи
     if article.author != current_user:
         flash('Вы не можете редактировать эту статью', 'error')
         return redirect(url_for('main.post_detail', id=id))
 
-    if request.method == 'POST':
-        # Получаем список файлов из запроса
-        new_images = request.files.getlist('file')
-        if new_images:
-            for new_image in new_images:
-                if allowed_file(new_image.filename):
-                    filename = secure_filename(new_image.filename)
-                    file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], filename)
-                    new_image.save(file_path)
-                    print("Image saved successfully")
+    if request.method == "POST":
+        title = request.form.get('title', article.title)
+        intro = request.form.get('intro', article.intro)
+        text = request.form.get('text', article.text)
 
-                    # Добавляем новое имя файла к существующему списку
-                    if article.file:
-                        article.file += ',' + filename
-                    else:
-                        article.file = filename
+        # Обработка файла
+        new_file = request.files.get('file')
+        new_filename = None
+        if new_file and allowed_file(new_file.filename):
+            new_filename = secure_filename(new_file.filename)
+            file_path = os.path.join(current_app.root_path, 'static', 'post_pictures', new_filename)
+            new_file.save(file_path)
 
-            # Сохраняем изменения в базе данных
+        try:
+            # Обновление данных статьи
+            article.title = title
+            article.intro = intro
+            article.text = text
+
+            # Обновление файла, если он был загружен
+            if new_filename:
+                if article.file:
+                    article.file += ',' + new_filename
+                else:
+                    article.file = new_filename
+
+            # Сохранение изменений в базе данных
             db.session.commit()
+            flash('Статья успешно обновлена!', 'success')
+            return redirect(url_for('main.post_detail', id=id))
+        except Exception as e:
+            print(f"Error updating article: {e}")
+            db.session.rollback()
+            flash('При обновлении статьи произошла ошибка', 'error')
+            return redirect(url_for('main.post_detail', id=id))
 
-        # Проверяем, был ли отправлен запрос на удаление изображения
-        if 'delete_image' in request.form:
-            filename_to_delete = request.form['delete_image']
-            if filename_to_delete in article.file.split(','):
-                try:
-                    # Удаляем файл изображения из папки
-                    file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], filename_to_delete)
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
+    else:
+        return render_template("post_update.html", article=article)
 
-                    # Удаляем имя файла из списка файлов в статье
-                    file_list = article.file.split(',')
-                    file_list.remove(filename_to_delete)
-                    article.file = ','.join(file_list)
 
-                    # Сохраняем изменения в базе данных
-                    db.session.commit()
+@bp.route('/posts/<int:id>/delete_image/<filename>', methods=['POST', 'DELETE'])
+@login_required
+def delete_post_image(id, filename):
+    if request.method == 'DELETE':
+        post = Article.query.get_or_404(id)
 
-                    flash('Изображение успешно удалено', 'success')
-                except Exception as e:
-                    flash(f'Ошибка при удалении изображения: {str(e)}', 'error')
-            else:
-                flash('Изображение не найдено в статье', 'error')
+        # Проверяем, является ли пользователь автором статьи
+        if post.author != current_user:
+            return jsonify({'message': 'Вы не можете удалять изображения этой статьи'}), 403
 
-        # Обновление остальных данных статьи
-        article.title = request.form.get('title', article.title)
-        article.intro = request.form.get('intro', article.intro)
-        article.text = request.form.get('text', article.text)
+        # Проверяем, существует ли изображение в списке файлов статьи
+        if filename in post.file.split(','):
+            try:
+                # Удаляем файл изображения из папки
+                file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], filename)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
 
-        # Обновление параметра group_id
-        selected_groups = request.form.getlist('groups')
-        if 'all' in selected_groups:  # Если выбрана опция "Все", то group_id будет None
-            article.group_id = None
+                # Удаляем имя файла из списка файлов в статье
+                file_list = post.file.split(',')
+                file_list.remove(filename)
+                post.file = ','.join(file_list)
+
+                # Сохраняем изменения в базе данных
+                db.session.commit()
+
+                return jsonify({'message': 'Изображение успешно удалено'}), 200
+            except Exception as e:
+                return jsonify({'message': f'При удалении изображения произошла ошибка: {str(e)}'}), 500
         else:
-            # Выбираем первую выбранную группу (если есть) и обновляем group_id
-            group_id = selected_groups[0] if selected_groups else None
-            article.group_id = group_id
-
-        # Сохранение изменений в базе данных
-        db.session.commit()
-
-        flash('Статья успешно обновлена!', 'success')
-        return redirect(url_for('main.post_detail', id=id))
-
-    groups = GroupModel.query.all()
-    return render_template('post_update.html', article=article, groups=groups)
+            return jsonify({'message': 'Изображение не найдено в статье'}), 404
 
 
 @bp.route('/your-posts', methods=['GET', 'POST'])
