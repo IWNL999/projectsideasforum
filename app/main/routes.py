@@ -201,7 +201,8 @@ def post_update(id):
             # Сохранение изменений в базе данных
             db.session.commit()
             flash('Статья успешно обновлена!', 'success')
-            return redirect(url_for('main.post_detail', id=id))
+            return redirect(url_for('main.post_detail', id=article.id))  # Изменение в этой строке
+
         except Exception as e:
             print(f"Error updating article: {e}")
             db.session.rollback()
