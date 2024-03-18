@@ -112,17 +112,20 @@ def create_article():
         intro = request.form['intro']
         text = request.form['text']
 
-        # Обработка файла
-        file = request.files.get('file')
-        filename = None
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(current_app.root_path, 'static', 'post_pictures', filename)
-            file.save(file_path)
+        # Обработка файлов
+        files = request.files.getlist('file')
+        filenames = []
 
-        article = Article(title=title, intro=intro, text=text, user_id=current_user.id, file=filename)
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(current_app.root_path, 'static', 'post_pictures', filename)
+                file.save(file_path)
+                filenames.append(filename)
 
         try:
+            # Создание новой статьи с соответствующими именами файлов
+            article = Article(title=title, intro=intro, text=text, user_id=current_user.id, file=','.join(filenames))
             db.session.add(article)
             db.session.commit()
             return redirect('/posts')
@@ -133,6 +136,7 @@ def create_article():
 
     else:
         return render_template("create-article.html")
+
 
 
 @bp.route('/posts/<int:id>/del', methods=['POST'])
@@ -178,12 +182,14 @@ def post_update(id):
         text = request.form.get('text', article.text)
 
         # Обработка файла
-        new_file = request.files.get('file')
-        new_filename = None
-        if new_file and allowed_file(new_file.filename):
-            new_filename = secure_filename(new_file.filename)
-            file_path = os.path.join(current_app.root_path, 'static', 'post_pictures', new_filename)
-            new_file.save(file_path)
+        new_files = request.files.getlist('file')
+        new_filenames = []
+        for new_file in new_files:
+            if new_file and allowed_file(new_file.filename):
+                new_filename = secure_filename(new_file.filename)
+                file_path = os.path.join(current_app.root_path, 'static', 'post_pictures', new_filename)
+                new_file.save(file_path)
+                new_filenames.append(new_filename)
 
         try:
             # Обновление данных статьи
@@ -192,16 +198,16 @@ def post_update(id):
             article.text = text
 
             # Обновление файла, если он был загружен
-            if new_filename:
+            if new_filenames:
                 if article.file:
-                    article.file += ',' + new_filename
+                    article.file += ',' + ','.join(new_filenames)
                 else:
-                    article.file = new_filename
+                    article.file = ','.join(new_filenames)
 
             # Сохранение изменений в базе данных
             db.session.commit()
             flash('Статья успешно обновлена!', 'success')
-            return redirect(url_for('main.post_detail', id=article.id))  # Изменение в этой строке
+            return redirect(url_for('main.post_detail', id=article.id))
 
         except Exception as e:
             print(f"Error updating article: {e}")

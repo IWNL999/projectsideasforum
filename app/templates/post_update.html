@@ -69,7 +69,7 @@
             {% if article.file %}
                 {% for image in article.file.split(',') %}
                 <div class="image-container">
-                    <img src="{{ url_for('static', filename='post_pictures/' + image) }}" class="img-preview post-image-edit">
+                    <img src="{{ url_for('static', filename='post_pictures/' + image) }}" class="post-image-edit">
                     <form id="delete-image-form" method="post" style="display: inline;" onsubmit="deleteImage('{{ image }}'); return false;">
                         <input type="hidden" name="_method" value="DELETE"> <!-- Для отправки DELETE-запроса -->
                         <input type="hidden" name="filename" value="{{ image }}">
@@ -123,10 +123,13 @@ function updatePost(event) {
     let form = document.getElementById('update-form');
     let formData = new FormData(form);
 
-    // Добавляем каждое изображение с уникальным именем
+    // Очищаем все файлы, загруженные в FormData
+    formData.delete('file');
+
+    // Добавляем каждое изображение с общим ключом 'file'
     var files = document.getElementById('file').files;
     for (var i = 0; i < files.length; i++) {
-        formData.append('file' + i, files[i]);
+        formData.append('file', files[i]);
     }
 
     fetch(form.action, {
@@ -145,6 +148,7 @@ function updatePost(event) {
         alert('Произошла ошибка при обновлении поста. Проверьте консоль для дополнительной информации.');
     });
 }
+
 
 // JavaScript функция для удаления картинки
 function deleteImage(image) {
@@ -170,6 +174,5 @@ function deleteImage(image) {
     });
 }
 </script>
-
 
 {% endblock %}
