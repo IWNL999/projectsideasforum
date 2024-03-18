@@ -60,10 +60,11 @@
         <!-- Поле для загрузки изображения -->
         <label for="file" class="btn btn-primary join-code-input">
             Выберите новые изображения
-            <input type="file" name="file" id="file" style="display:none" accept="image/*" multiple="true">
+            <input type="file" name="file" id="file" style="display:none" accept="image/*" multiple>
         </label>
 
         <div id="file-preview-container"></div> <!-- Здесь будет отображаться предпросмотр новых изображений -->
+
         <div id="existing-images-preview">
             {% if article.file %}
                 {% for image in article.file.split(',') %}
@@ -85,11 +86,48 @@
 </div>
 
 <script>
+document.getElementById('file').addEventListener('change', function(event) {
+    var previewContainer = document.getElementById('file-preview-container');
+    var files = event.target.files;
+    for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        var reader = new FileReader();
+
+        reader.onload = function(e) {
+            var img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'img-preview post-image-edit';
+
+            var div = document.createElement('div');
+            div.className = 'image-container';
+
+            var deleteButton = document.createElement('button');
+            deleteButton.className = 'btn btn-danger btn-sm delete-btn';
+            deleteButton.innerText = 'Удалить';
+            deleteButton.onclick = function() {
+                div.remove(); // Удалить превью изображения при нажатии на кнопку удаления
+            };
+
+            div.appendChild(img);
+            div.appendChild(deleteButton);
+            previewContainer.appendChild(div);
+        }
+
+        reader.readAsDataURL(file);
+    }
+});
+
 function updatePost(event) {
     event.preventDefault(); // Предотвращаем стандартное действие формы
 
     let form = document.getElementById('update-form');
     let formData = new FormData(form);
+
+    // Добавляем каждое изображение с уникальным именем
+    var files = document.getElementById('file').files;
+    for (var i = 0; i < files.length; i++) {
+        formData.append('file' + i, files[i]);
+    }
 
     fetch(form.action, {
         method: 'POST',
@@ -107,9 +145,6 @@ function updatePost(event) {
         alert('Произошла ошибка при обновлении поста. Проверьте консоль для дополнительной информации.');
     });
 }
-
-
-
 
 // JavaScript функция для удаления картинки
 function deleteImage(image) {
@@ -135,5 +170,6 @@ function deleteImage(image) {
     });
 }
 </script>
+
 
 {% endblock %}
