@@ -138,7 +138,6 @@ def create_article():
         return render_template("create-article.html")
 
 
-
 @bp.route('/posts/<int:id>/del', methods=['POST'])
 @login_required
 def post_delete(id):
@@ -204,6 +203,9 @@ def post_update(id):
                 else:
                     article.file = ','.join(new_filenames)
 
+            # Удаление новых изображений
+            delete_new_images(request.form.getlist('delete_new_images'))
+
             # Сохранение изменений в базе данных
             db.session.commit()
             flash('Статья успешно обновлена!', 'success')
@@ -217,6 +219,17 @@ def post_update(id):
 
     else:
         return render_template("post_update.html", article=article)
+
+
+def delete_new_images(images):
+    for image in images:
+        try:
+            # Удаляем файл изображения из папки
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], image)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print(f"Error deleting image: {e}")
 
 
 @bp.route('/posts/<int:id>/delete_image/<filename>', methods=['POST', 'DELETE'])

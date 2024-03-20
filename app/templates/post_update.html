@@ -23,7 +23,7 @@
         <textarea name="intro" id="intro" class="form-control" placeholder="Введите анонс">{{ article.intro }}</textarea><br>
         <textarea name="text" id="text" class="form-control" placeholder="Введите основной текст">{{ article.text }}</textarea><br>
         <input type="hidden" name="existing_file" value="{{ article.file }}">
-
+        <input type="hidden" name="deleted_files" id="deleted-files" value="">
         <div class="form-group">
             <label>Выберите место публикации:</label><br>
             <input type="radio" id="all" name="groups" value="all">
@@ -63,31 +63,31 @@
             <input type="file" name="file" id="file" style="display:none" accept="image/*" multiple>
         </label>
 
-        <div id="file-preview-container"></div> <!-- Здесь будет отображаться предпросмотр новых изображений -->
-
         <div id="existing-images-preview">
             {% if article.file %}
-                {% for image in article.file.split(',') %}
-                <div class="image-container">
-                    <img src="{{ url_for('static', filename='post_pictures/' + image) }}" class="post-image-edit">
-                    <form id="delete-image-form" method="post" style="display: inline;" onsubmit="deleteImage('{{ image }}'); return false;">
-                        <input type="hidden" name="_method" value="DELETE"> <!-- Для отправки DELETE-запроса -->
-                        <input type="hidden" name="filename" value="{{ image }}">
-                        <button type="submit" class="btn btn-danger btn-sm delete-btn" onclick="return confirm('Вы уверены, что хотите удалить это изображение?')">Удалить</button>
-                    </form>
-                </div>
+                {% set images = article.file.split(',') %}
+                {% for image in images %}
+                    <div class="image-container">
+                        <img src="{{ url_for('static', filename='post_pictures/' + image) }}" class="post-image-edit">
+                        <button type="button" id="delete-preview-image-{{ loop.index }}" class="btn btn-danger btn-sm delete-btn" onclick="confirmAndDelete('{{ image }}')">Удалить</button>
+                    </div>
                 {% endfor %}
             {% endif %}
         </div>
+
+
+        <div id="file-preview-container" class="mt-3"></div> <!-- Здесь будет отображаться предпросмотр новых изображений -->
+
         <br>
         <button type="button" class="btn btn-success btn-update" onclick="updatePost(event)">Обновить</button>
-
     </form>
 </div>
 
 <script>
 document.getElementById('file').addEventListener('change', function(event) {
     var previewContainer = document.getElementById('file-preview-container');
+    previewContainer.innerHTML = ''; // Очищаем превью перед добавлением новых изображений
+
     var files = event.target.files;
     for (var i = 0; i < files.length; i++) {
         var file = files[i];
@@ -105,7 +105,7 @@ document.getElementById('file').addEventListener('change', function(event) {
             deleteButton.className = 'btn btn-danger btn-sm delete-btn';
             deleteButton.innerText = 'Удалить';
             deleteButton.onclick = function() {
-                div.remove(); // Удалить превью изображения при нажатии на кнопку удаления
+                div.remove(); // Удаляем превью изображения при нажатии на кнопку удаления
             };
 
             div.appendChild(img);
@@ -116,6 +116,17 @@ document.getElementById('file').addEventListener('change', function(event) {
         reader.readAsDataURL(file);
     }
 });
+
+function updateDeletedFiles(image) {
+    var deletedFilesInput = document.getElementById('deleted-files');
+    var deletedFiles = deletedFilesInput.value;
+    if (deletedFiles) {
+        deletedFiles += ',' + image;
+    } else {
+        deletedFiles = image;
+    }
+    deletedFilesInput.value = deletedFiles;
+}
 
 function updatePost(event) {
     event.preventDefault(); // Предотвращаем стандартное действие формы
@@ -131,7 +142,12 @@ function updatePost(event) {
     for (var i = 0; i < files.length; i++) {
         formData.append('file', files[i]);
     }
-
+    // Удаляем из FormData файлы, которые нужно удалить
+    var imagesToDelete = document.querySelectorAll('.image-container img');
+    for (var i = 0; i < imagesToDelete.length; i++) {
+        var imageName = imagesToDelete[i].src.split('/').pop(); // Получаем имя файла из URL
+        formData.delete('file_' + imageName); // Удаляем файл из FormData
+    }
     fetch(form.action, {
         method: 'POST',
         body: formData,
@@ -149,9 +165,21 @@ function updatePost(event) {
     });
 }
 
+function confirmAndDelete(image) {
+    if (confirm('Вы уверены, что хотите удалить это изображение?')) {
+        deleteImage(image);
+        // Удалить превью изображения после подтверждения удаления
+        var imageContainer = document.querySelector(`.image-container img[src*='${image}']`).parentElement;
+        imageContainer.remove();
 
-// JavaScript функция для удаления картинки
+        // Обновляем скрытое поле deleted-files
+        updateDeletedFiles(image);
+    }
+}
+
+
 function deleteImage(image) {
+    console.log('Удаляем изображение:', image); // Проверка, отправляется ли запрос на удаление
     fetch(`/posts/{{ article.id }}/delete_image/${image}`, {
         method: 'DELETE', // Метод DELETE для удаления картинки
         headers: {
@@ -159,6 +187,7 @@ function deleteImage(image) {
         }
     })
     .then(response => {
+        console.log('Ответ сервера:', response);
         if (!response.ok) {
             throw new Error('Ошибка удаления изображения');
         }
