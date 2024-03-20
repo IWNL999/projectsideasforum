@@ -1,6 +1,6 @@
 import os
 import secrets
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import UniqueConstraint, event
 from flask import current_app, url_for
 from app import db, bcrypt
 from werkzeug.utils import secure_filename
@@ -191,6 +191,16 @@ class Article(db.Model):
         self.file = file
         self.group_id = group_id
 
+    def update_group_relationship(target, value, oldvalue, initiator):
+        if target.group_id is not None:
+            # Получаем группу, связанную с текущей статьей
+            group = GroupModel.query.get(target.group_id)
+            if group:
+                # Если группа существует, добавляем текущую статью в список постов этой группы
+                if target not in group.posts:
+                    group.posts.append(target)
+                    db.session.commit()
+
     def author_name(self):
         user = User.query.get(self.user_id)
         return user.login if user else 'Unknown'
@@ -201,6 +211,7 @@ class Article(db.Model):
 
     def __repr__(self):
         return f'<Article {self.id}>'
+
 
 
 
