@@ -179,6 +179,15 @@ def post_update(id):
         title = request.form.get('title', article.title)
         intro = request.form.get('intro', article.intro)
         text = request.form.get('text', article.text)
+        group_id = request.form.get('group_id')
+        if group_id == '' or group_id is None:  # Если group_id пусто или None, установим его как None
+            group_id = None
+        elif group_id.isdigit():  # Проверяем, является ли строка числом
+            group_id = int(group_id)
+        else:
+            # Обработка неверного формата данных, например, если group_id не является числом
+            flash('Ошибка: group_id имеет неверный формат', 'error')
+            return redirect(url_for('main.post_detail', id=id))
 
         # Обработка файла
         new_files = request.files.getlist('file')
@@ -195,6 +204,8 @@ def post_update(id):
             article.title = title
             article.intro = intro
             article.text = text
+            # Установка group_id
+            article.group_id = group_id
 
             # Обновление файла, если он был загружен
             if new_filenames:
@@ -202,9 +213,6 @@ def post_update(id):
                     article.file += ',' + ','.join(new_filenames)
                 else:
                     article.file = ','.join(new_filenames)
-
-            # Удаление новых изображений
-            delete_new_images(request.form.getlist('delete_new_images'))
 
             # Сохранение изменений в базе данных
             db.session.commit()
@@ -218,18 +226,7 @@ def post_update(id):
             return redirect(url_for('main.post_detail', id=id))
 
     else:
-        return render_template("post_update.html", article=article)
-
-
-def delete_new_images(images):
-    for image in images:
-        try:
-            # Удаляем файл изображения из папки
-            file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], image)
-            if os.path.exists(file_path):
-                os.remove(file_path)
-        except Exception as e:
-            print(f"Error deleting image: {e}")
+        return render_template("post_update.html", article=article, group_id=article.group_id)
 
 
 @bp.route('/posts/<int:id>/delete_image/<filename>', methods=['POST', 'DELETE'])

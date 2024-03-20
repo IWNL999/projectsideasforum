@@ -57,6 +57,9 @@
             <p>Выбранная группа: {{ selected_groups[0] if selected_groups else None }}</p> <!-- Отображаем выбранную группу -->
         </div>
 
+        <!-- Поле для передачи выбранной группы -->
+        <input type="hidden" name="group_id" id="group_id" value="{{ selected_group.id if selected_group else None }}">
+
         <!-- Поле для загрузки изображения -->
         <label for="file" class="btn btn-primary join-code-input">
             Выберите новые изображения
@@ -134,6 +137,12 @@ function updatePost(event) {
     let form = document.getElementById('update-form');
     let formData = new FormData(form);
 
+    // Обновляем скрытое поле group_id
+    var selectedGroupId = document.querySelector('input[name="groups"]:checked').value;
+    formData.set('group_id', selectedGroupId); // Установка значения group_id в FormData
+
+
+
     // Очищаем все файлы, загруженные в FormData
     formData.delete('file');
 
@@ -164,6 +173,7 @@ function updatePost(event) {
         alert('Произошла ошибка при обновлении поста. Проверьте консоль для дополнительной информации.');
     });
 }
+
 
 function confirmAndDelete(image) {
     if (confirm('Вы уверены, что хотите удалить это изображение?')) {
