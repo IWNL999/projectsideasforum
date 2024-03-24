@@ -195,24 +195,8 @@ def post_update(id):
             article.intro = intro
             article.text = text
 
-            # Очищаем текущие group_id поста
-            current_group_id = article.group_id
-
-            # Проверяем, есть ли уже group_id, если есть, сохраняем его
-            if current_group_id:
-                group_ids.append(str(current_group_id))
-
-            # Очищаем текущие group_id поста
-            article.group_id = None
-
-            # Проходим по всем group_ids, выбранным пользователем
-            for group_id in group_ids:
-                if group_id.isdigit():
-                    group_id = int(group_id)
-                    group = GroupModel.query.get(group_id)
-                    if group:
-                        article.group_id = group_id
-                        break
+            # Преобразуем список идентификаторов групп в строку с разделителем запятая
+            article.group_id = ','.join(group_ids)
 
             if new_filenames:
                 if article.file:
@@ -231,8 +215,7 @@ def post_update(id):
             return redirect(url_for('main.post_detail', id=id))
 
     else:
-        group_ids = [str(article.group_id)] if article.group_id else []
-        return render_template("post_update.html", article=article, group_ids=group_ids)
+        return render_template("post_update.html", article=article)
 
 
 @bp.route('/posts/<int:id>/delete_image/<filename>', methods=['POST', 'DELETE'])
@@ -511,6 +494,7 @@ def group_posts(group_id):
     if group not in current_user.groups:
         flash('Вы не являетесь участником этой группы.', 'danger')
         return redirect(url_for('main.create_group'))
+    print(group.posts.statement)
 
     # Получаем все посты из выбранной группы
     group_posts = group.posts

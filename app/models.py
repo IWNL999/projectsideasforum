@@ -177,7 +177,7 @@ class Article(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
     file = db.Column(db.String(1000))
     hidden = db.Column(db.Boolean, default=False)
-    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))  # Здесь изменено на Integer
+    group_id = db.Column(db.String(300), db.ForeignKey('groups.id'))
 
     comments = db.relationship("Comment", cascade="all, delete-orphan", backref="article")
     author = db.relationship('User', back_populates='user_articles', foreign_keys=[user_id])

@@ -148,14 +148,7 @@ function updatePost(event) {
     checkboxes.forEach(function(checkbox) {
         selectedGroupIds.push(checkbox.value);
     });
-    if (selectedGroupIds.length > 0) {
-        formData.set('groups', selectedGroupIds.join(','));
-    } else {
-        formData.set('groups', 'all');
-    }
-
-    // Выведем выбранные группы в консоль
-    console.log('Selected Group IDs:', selectedGroupIds.join(','));
+    formData.set('groups', selectedGroupIds.join(',')); // Всегда устанавливаем список значений
 
     // Очищаем все файлы, загруженные в FormData
     formData.delete('file');
@@ -165,12 +158,14 @@ function updatePost(event) {
     for (var i = 0; i < files.length; i++) {
         formData.append('file', files[i]);
     }
+
     // Удаляем из FormData файлы, которые нужно удалить
     var imagesToDelete = document.querySelectorAll('.image-container img');
     for (var i = 0; i < imagesToDelete.length; i++) {
         var imageName = imagesToDelete[i].src.split('/').pop(); // Получаем имя файла из URL
         formData.delete('file_' + imageName); // Удаляем файл из FormData
     }
+
     fetch(form.action, {
         method: 'POST',
         body: formData,
@@ -188,18 +183,6 @@ function updatePost(event) {
     });
 }
 
-
-function confirmAndDelete(image) {
-    if (confirm('Вы уверены, что хотите удалить это изображение?')) {
-        deleteImage(image);
-        // Удалить превью изображения после подтверждения удаления
-        var imageContainer = document.querySelector(`.image-container img[src*='${image}']`).parentElement;
-        imageContainer.remove();
-
-        // Обновляем скрытое поле deleted-files
-        updateDeletedFiles(image);
-    }
-}
 
 function deleteImage(image) {
     console.log('Удаляем изображение:', image); // Проверка, отправляется ли запрос на удаление
