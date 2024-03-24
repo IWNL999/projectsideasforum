@@ -24,14 +24,17 @@
         <textarea name="text" id="text" class="form-control" placeholder="Введите основной текст">{{ article.text }}</textarea><br>
         <input type="hidden" name="existing_file" value="{{ article.file }}">
         <input type="hidden" name="deleted_files" id="deleted-files" value="">
+
+        <!-- Выбор группы для отображения -->
         <div class="form-group">
             <label>Выберите место публикации:</label><br>
-            <input type="radio" id="all" name="groups" value="all">
+            <input type="checkbox" id="all" name="groups" value="all">
             <label for="all">Все</label><br>
             {% set displayed_groups = {} %}
             {% for group in groups %}
                 {% if group.id not in displayed_groups %}
-                    <input type="radio" id="group_{{ group.id }}" name="groups" value="{{ group.id }}" {% if group.id in selected_groups %}checked{% endif %}>
+                    <input type="checkbox" id="group_{{ group.id }}" name="groups" value="{{ group.id }}"
+                           {% if group.id in group_ids %}checked{% endif %}>
                     <label for="group_{{ group.id }}">{{ group.name }}</label><br>
                     {% set _ = displayed_groups.update({group.id: True}) %}
                 {% endif %}
@@ -39,7 +42,8 @@
             <!-- Добавим также группы, автором которых является текущий пользователь -->
             {% for author_group in current_user.authored_groups %}
                 {% if author_group.id not in displayed_groups %}
-                    <input type="radio" id="author_group_{{ author_group.id }}" name="groups" value="{{ author_group.id }}" {% if author_group.id in selected_groups %}checked{% endif %}>
+                    <input type="checkbox" id="author_group_{{ author_group.id }}" name="groups" value="{{ author_group.id }}"
+                           {% if author_group.id in group_ids %}checked{% endif %}>
                     <label for="author_group_{{ author_group.id }}">{{ author_group.name }}</label><br>
                     {% set _ = displayed_groups.update({author_group.id: True}) %}
                 {% endif %}
@@ -48,20 +52,18 @@
             {% for group in current_user.groups %}
                 {% if group not in current_user.authored_groups %}
                     {% if group.id not in displayed_groups %}
-                        <input type="radio" id="user_group_{{ group.id }}" name="groups" value="{{ group.id }}" {% if group.id in selected_groups %}checked{% endif %}>
+                        <input type="checkbox" id="user_group_{{ group.id }}" name="groups" value="{{ group.id }}"
+                               {% if group.id in group_ids %}checked{% endif %}>
                         <label for="user_group_{{ group.id }}">{{ group.name }}</label><br>
                         {% set _ = displayed_groups.update({group.id: True}) %}
                     {% endif %}
                 {% endif %}
             {% endfor %}
-            <p>Выбранная группа: {{ selected_groups[0] if selected_groups else None }}</p> <!-- Отображаем выбранную группу -->
         </div>
 
-        <!-- Поле для передачи выбранной группы -->
-        <input type="hidden" name="group_id" id="group_id" value="{{ selected_group.id if selected_group else None }}">
 
         <!-- Поле для загрузки изображения -->
-        <label for="file" class="btn btn-primary join-code-input">
+        <label for="file" class="btn btn-primary choose-img join-code-input">
             Выберите новые изображения
             <input type="file" name="file" id="file" style="display:none" accept="image/*" multiple>
         </label>
@@ -114,7 +116,7 @@ document.getElementById('file').addEventListener('change', function(event) {
             div.appendChild(img);
             div.appendChild(deleteButton);
             previewContainer.appendChild(div);
-        }
+        };
 
         reader.readAsDataURL(file);
     }
@@ -137,11 +139,23 @@ function updatePost(event) {
     let form = document.getElementById('update-form');
     let formData = new FormData(form);
 
-    // Обновляем скрытое поле group_id
-    var selectedGroupId = document.querySelector('input[name="groups"]:checked').value;
-    formData.set('group_id', selectedGroupId); // Установка значения group_id в FormData
+    // Очистим скрытое поле groups
+    formData.delete('groups');
 
+    // Получим все выбранные группы и установим их в FormData
+    var selectedGroupIds = [];
+    var checkboxes = document.querySelectorAll('input[name="groups"]:checked');
+    checkboxes.forEach(function(checkbox) {
+        selectedGroupIds.push(checkbox.value);
+    });
+    if (selectedGroupIds.length > 0) {
+        formData.set('groups', selectedGroupIds.join(','));
+    } else {
+        formData.set('groups', 'all');
+    }
 
+    // Выведем выбранные группы в консоль
+    console.log('Selected Group IDs:', selectedGroupIds.join(','));
 
     // Очищаем все файлы, загруженные в FormData
     formData.delete('file');
@@ -187,7 +201,6 @@ function confirmAndDelete(image) {
     }
 }
 
-
 function deleteImage(image) {
     console.log('Удаляем изображение:', image); // Проверка, отправляется ли запрос на удаление
     fetch(`/posts/{{ article.id }}/delete_image/${image}`, {
@@ -213,5 +226,7 @@ function deleteImage(image) {
     });
 }
 </script>
+
+
 
 {% endblock %}

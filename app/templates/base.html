@@ -61,6 +61,17 @@
                                 <li><a class="dropdown-item" href="{{ url_for('main.create_group') }}">Создать группу</a></li>
                             </ul>
                         </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" id="conferenses" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Конференции
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="conferenses">
+                                <li><a class="dropdown-item" href="https://conf.profil.mos.ru/inj" target="_blank">Инженеры будущего</a></li>
+                                <li><a class="dropdown-item" href="https://conf.profil.mos.ru/academ" target="_blank">Наука для жизни</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.allconferences') }}">Все конференции</a></li>
+                            </ul>
+                        </li>
                     </ul>
 
                     <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search" method="post" action="{{ url_for('main.search_posts') }}">

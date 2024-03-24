@@ -627,3 +627,8 @@ a:hover {
     max-height: 200px; /* Максимальная высота изображения */
     text-align: left; /* Выравнивание по левому краю */
 }
+
+.choose-img{
+    margin-top: 20px;
+    margin-bottom: 10px;
+}

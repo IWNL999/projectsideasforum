@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Все конференции
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <div class="">
+        <h1>Все конференции</h1>
+
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+

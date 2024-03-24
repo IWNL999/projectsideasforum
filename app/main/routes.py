@@ -179,17 +179,8 @@ def post_update(id):
         title = request.form.get('title', article.title)
         intro = request.form.get('intro', article.intro)
         text = request.form.get('text', article.text)
-        group_id = request.form.get('group_id')
-        if group_id == '' or group_id is None:  # Если group_id пусто или None, установим его как None
-            group_id = None
-        elif group_id.isdigit():  # Проверяем, является ли строка числом
-            group_id = int(group_id)
-        else:
-            # Обработка неверного формата данных, например, если group_id не является числом
-            flash('Ошибка: group_id имеет неверный формат', 'error')
-            return redirect(url_for('main.post_detail', id=id))
+        group_ids = request.form.getlist('groups')
 
-        # Обработка файла
         new_files = request.files.getlist('file')
         new_filenames = []
         for new_file in new_files:
@@ -200,21 +191,35 @@ def post_update(id):
                 new_filenames.append(new_filename)
 
         try:
-            # Обновление данных статьи
             article.title = title
             article.intro = intro
             article.text = text
-            # Установка group_id
-            article.group_id = group_id
 
-            # Обновление файла, если он был загружен
+            # Очищаем текущие group_id поста
+            current_group_id = article.group_id
+
+            # Проверяем, есть ли уже group_id, если есть, сохраняем его
+            if current_group_id:
+                group_ids.append(str(current_group_id))
+
+            # Очищаем текущие group_id поста
+            article.group_id = None
+
+            # Проходим по всем group_ids, выбранным пользователем
+            for group_id in group_ids:
+                if group_id.isdigit():
+                    group_id = int(group_id)
+                    group = GroupModel.query.get(group_id)
+                    if group:
+                        article.group_id = group_id
+                        break
+
             if new_filenames:
                 if article.file:
                     article.file += ',' + ','.join(new_filenames)
                 else:
                     article.file = ','.join(new_filenames)
 
-            # Сохранение изменений в базе данных
             db.session.commit()
             flash('Статья успешно обновлена!', 'success')
             return redirect(url_for('main.post_detail', id=article.id))
@@ -226,7 +231,8 @@ def post_update(id):
             return redirect(url_for('main.post_detail', id=id))
 
     else:
-        return render_template("post_update.html", article=article, group_id=article.group_id)
+        group_ids = [str(article.group_id)] if article.group_id else []
+        return render_template("post_update.html", article=article, group_ids=group_ids)
 
 
 @bp.route('/posts/<int:id>/delete_image/<filename>', methods=['POST', 'DELETE'])
@@ -461,6 +467,12 @@ def create_group():
         group_name = create_group_form.group_name.data
 
         try:
+            # Проверяем, существует ли группа с таким названием
+            existing_group = GroupModel.query.filter_by(name=group_name).first()
+            if existing_group:
+                flash('Группа с таким названием уже существует.', 'danger')
+                return redirect(url_for('main.create_group'))  # Перенаправляем на другую страницу, например, на домашнюю
+
             # Создаем группу
             new_group = GroupModel(name=group_name, author_id=current_user.id)
             db.session.add(new_group)
@@ -477,7 +489,7 @@ def create_group():
             flash('Группа успешно создана!', 'success')
 
             # Сформируем URL для перехода
-            redirect_url = url_for('main.group_details', group_id=new_group_id)
+            redirect_url = url_for('main.group_posts', group_id=new_group_id)
 
             # Перенаправим на страницу с деталями группы
             return redirect(redirect_url)
@@ -498,7 +510,7 @@ def group_posts(group_id):
     # Проверяем, есть ли у пользователя привязка к этой группе
     if group not in current_user.groups:
         flash('Вы не являетесь участником этой группы.', 'danger')
-        return redirect(url_for('где-то перенаправление, если пользователь не участник группы'))
+        return redirect(url_for('main.create_group'))
 
     # Получаем все посты из выбранной группы
     group_posts = group.posts
@@ -553,6 +565,34 @@ def hide_post(id):
     return redirect(f'/posts/{id}')
 
 
+@bp.route('/allconferences')
+def allconferences():
+
+    return render_template('conferences.html')
 
 
+@bp.route('/groups/delete/<int:group_id>', methods=['POST'])
+@login_required
+def delete_group(group_id):
+    group = GroupModel.query.get_or_404(group_id)
 
+    # Проверяем, что текущий пользователь является автором группы
+    if group.author_id != current_user.id:
+        flash('Вы не являетесь автором этой группы', 'error')
+        return redirect(url_for('main.groups'))
+
+    try:
+        # Удаляем все связи пользователя с группой
+        UserGroup.query.filter_by(group_id=group_id).delete()
+
+        # Удаляем группу из базы данных
+        db.session.delete(group)
+        db.session.commit()
+
+        flash('Группа успешно удалена', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Ошибка при удалении группы', 'error')
+        print(f"Error deleting group: {e}")
+
+    return redirect(url_for('main.groups'))
