@@ -38,7 +38,7 @@
                             </a>
                         {% endif %}
                         <div class="group-details ml-2">
-                            <a class="group-name dark-text" href="{{ url_for('main.group_posts', group_id=group.id) }}">{{ group.name }}</a>
+                            <a class="group-name dark-text" href="{{ url_for('main.group_posts', id=group.id) }}">{{ group.name }}</a>
                             <p>Создатель: <a href='/profile/{{ group.author.id }}' class="author-link text-dark-gray">@{{ group.author.login }}</a></p>
                         </div>
                         {% if current_user.is_authenticated and current_user.id == group.author.id %}

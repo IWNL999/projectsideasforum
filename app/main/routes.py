@@ -1,12 +1,12 @@
-import json
 import os
+import traceback
 from flask import render_template, url_for, request, redirect, flash, current_app, g, abort, jsonify
 from sqlalchemy.exc import IntegrityError
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
 from app import db, login_manager
 from app.main.forms import CommentForm, CreateGroupForm
-from app.models import User, Article, Comment, GroupModel, UserGroup
+from app.models import User, Article, Comment, GroupModel, UserGroup, ArticleGroupAssociation, Moderator, Admin
 from app.main import bp
 
 
@@ -14,8 +14,7 @@ from app.main import bp
 def load_user(user_id):
     try:
         user_id = int(user_id)
-        group_id = request.args.get('group_id')
-        return User.query.filter_by(id=user_id, group_id=group_id).first()
+        return User.query.get(user_id)
     except ValueError:
         return None
 
@@ -171,7 +170,7 @@ def post_delete(id):
 def post_update(id):
     article = Article.query.get_or_404(id)
 
-    if article.author != current_user:
+    if article.author != current_user and not Moderator.query.filter_by(user_id=current_user.id).first():
         flash('Вы не можете редактировать эту статью', 'error')
         return redirect(url_for('main.post_detail', id=id))
 
@@ -179,7 +178,8 @@ def post_update(id):
         title = request.form.get('title', article.title)
         intro = request.form.get('intro', article.intro)
         text = request.form.get('text', article.text)
-        group_ids = request.form.getlist('groups')
+        group_ids_str = request.form.get('groups', '')
+        group_ids = [int(group_id) for group_id in group_ids_str.split(',') if group_id.strip()]
 
         new_files = request.files.getlist('file')
         new_filenames = []
@@ -195,8 +195,17 @@ def post_update(id):
             article.intro = intro
             article.text = text
 
-            # Преобразуем список идентификаторов групп в строку с разделителем запятая
-            article.group_id = ','.join(group_ids)
+            # Получаем существующие ассоциации групп и статьи
+            existing_group_associations = ArticleGroupAssociation.query.filter_by(article_id=article.id).all()
+
+            # Удаляем все существующие ассоциации групп и статьи
+            for association in existing_group_associations:
+                db.session.delete(association)
+
+            # Добавляем новые ассоциации групп и статьи
+            for group_id in group_ids:
+                association = ArticleGroupAssociation(article_id=article.id, group_id=group_id)
+                db.session.add(association)
 
             if new_filenames:
                 if article.file:
@@ -212,10 +221,14 @@ def post_update(id):
             print(f"Error updating article: {e}")
             db.session.rollback()
             flash('При обновлении статьи произошла ошибка', 'error')
+            print("Additional info:", traceback.format_exc())
             return redirect(url_for('main.post_detail', id=id))
-
     else:
-        return render_template("post_update.html", article=article)
+        groups = GroupModel.query.all()
+        group_associations = ArticleGroupAssociation.query.filter_by(article_id=article.id).all()
+        group_ids = [association.group_id for association in group_associations]
+
+        return render_template("post_update.html", article=article, groups=groups, group_ids=group_ids)
 
 
 @bp.route('/posts/<int:id>/delete_image/<filename>', methods=['POST', 'DELETE'])
@@ -485,16 +498,15 @@ def create_group():
     return render_template('create-group.html', create_group_form=create_group_form)
 
 
-@bp.route('/groups/<int:group_id>')
+@bp.route('/groups/<int:id>')
 @login_required
-def group_posts(group_id):
-    group = GroupModel.query.get_or_404(group_id)
+def group_posts(id):
+    group = GroupModel.query.get_or_404(id)
 
     # Проверяем, есть ли у пользователя привязка к этой группе
     if group not in current_user.groups:
         flash('Вы не являетесь участником этой группы.', 'danger')
         return redirect(url_for('main.create_group'))
-    print(group.posts.statement)
 
     # Получаем все посты из выбранной группы
     group_posts = group.posts

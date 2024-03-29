@@ -5,6 +5,11 @@ from flask_login import LoginManager
 from sqlalchemy.exc import OperationalError
 import os
 
+from flask_admin import Admin
+
+from app.admin import UserModelView, RoleAssignView
+from app.models import User
+
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 login_manager = LoginManager()
@@ -34,6 +39,11 @@ def create_app():
 
     from app.main import bp
     app.register_blueprint(bp)
+
+    admin = Admin(app, name='Admin Panel', template_mode='bootstrap3')
+
+    admin.add_view(UserModelView(User, db.session))
+    admin.add_view(RoleAssignView(name='Assign Roles', endpoint='assign_roles'))
 
     return app
 

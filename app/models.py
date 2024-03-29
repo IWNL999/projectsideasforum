@@ -15,10 +15,17 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-like = db.Table('like',
-    db.Column('user_id', db.Integer, db.ForeignKey('users1.id')),
-    db.Column('recipient_id', db.Integer, db.ForeignKey('users1.id')),
+like = db.Table(
+    'like',
+    db.Column('user_id', db.Integer, db.ForeignKey('users1.id'), primary_key=True),
+    db.Column('recipient_id', db.Integer, db.ForeignKey('users1.id'), primary_key=True),
     db.UniqueConstraint('user_id', 'recipient_id', name='unique_like_constraint')
+)
+
+article_group_association = db.Table(
+    'article_group_association',
+    db.Column('article_id', db.Integer, db.ForeignKey('article.id'), primary_key=True),
+    db.Column('group_id', db.Integer, db.ForeignKey('groups.id'), primary_key=True)
 )
 
 
@@ -32,6 +39,18 @@ class UserGroup(db.Model):
     user = db.relationship('User', back_populates="user_groups")
 
 
+class ArticleGroupAssociation(db.Model):
+    __tablename__ = 'article_group_association'
+
+    article_id = db.Column(db.Integer, db.ForeignKey('article.id'), primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), primary_key=True)
+
+    article = db.relationship('Article', back_populates='group_associations', foreign_keys=[article_id])
+    group = db.relationship('GroupModel', back_populates='article_associations')
+
+    __table_args__ = {'extend_existing': True}
+
+
 class GroupModel(db.Model):
     __tablename__ = 'groups'
 
@@ -40,18 +59,21 @@ class GroupModel(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
     join_code = db.Column(db.String(20), unique=True, nullable=False)
 
+    posts = db.relationship('Article',
+                            secondary='article_group_association',
+                            backref=db.backref('groups', lazy='dynamic'),
+                            lazy='dynamic')
     user_groups = db.relationship('UserGroup', back_populates='group')
     author = db.relationship('User', back_populates='authored_groups', foreign_keys=[author_id])
     members = db.relationship('User', secondary='user_group', back_populates='groups')
 
-    posts = db.relationship('Article', back_populates='group')
+    article_associations = db.relationship('ArticleGroupAssociation', back_populates='group')
 
     def __init__(self, name, author_id):
         self.name = name
         self.author_id = author_id
         self.join_code = self.generate_join_code()
 
-    # генерация случайной ссылки для входа
     def generate_join_code(self):
         return secrets.token_urlsafe(6)
 
@@ -60,20 +82,20 @@ class User(UserMixin, db.Model):
     __tablename__ = 'users1'
     id = db.Column(db.Integer, primary_key=True, unique=True)
     login = db.Column(db.String(50), nullable=False, unique=True)
-    password = db.Column(db.String(50), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(60), nullable=False, unique=True)
     file = db.Column(db.String(255))
     description = db.Column(db.String(255))
     comments = db.Column(db.Text)
     recipient_id = db.Column(db.Integer, db.ForeignKey('users1.id'))
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
+
     user_articles = db.relationship("Article", back_populates="author")
     user_comments = db.relationship("Comment", back_populates="author")
     user_groups = db.relationship('UserGroup', back_populates='user', foreign_keys=[UserGroup.user_id])
     groups = db.relationship('GroupModel', secondary='user_group', back_populates='members')
     authored_groups = db.relationship('GroupModel', back_populates='author', foreign_keys='GroupModel.author_id')
 
-    # Новые отношения для лайков
     liked_users = db.relationship('User', secondary='like',
                                   primaryjoin='User.id == like.c.user_id',
                                   secondaryjoin='User.id == like.c.recipient_id',
@@ -97,6 +119,8 @@ class User(UserMixin, db.Model):
         self.description = description
         self.file = file
         self.comments = "[]"
+        self.is_moderator = False
+        self.is_admin = False
 
     def save_file(self, file):
         if file and allowed_file(file.filename):
@@ -169,6 +193,8 @@ class Comment(db.Model):
 
 
 class Article(db.Model):
+    __tablename__ = 'article'
+
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     intro = db.Column(db.String(300), nullable=False)
@@ -177,26 +203,23 @@ class Article(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
     file = db.Column(db.String(1000))
     hidden = db.Column(db.Boolean, default=False)
-    group_id = db.Column(db.String(300), db.ForeignKey('groups.id'))
 
     comments = db.relationship("Comment", cascade="all, delete-orphan", backref="article")
     author = db.relationship('User', back_populates='user_articles', foreign_keys=[user_id])
-    group = db.relationship('GroupModel', back_populates='posts')
+    group_associations = db.relationship('ArticleGroupAssociation', back_populates='article')
 
-    def __init__(self, title, intro, text, user_id, file=None, group_id=None):
+    def __init__(self, title, intro, text, user_id, file=None):
         self.title = title
         self.intro = intro
         self.text = text
         self.user_id = user_id
         self.file = file
-        self.group_id = group_id
 
+    @staticmethod
     def update_group_relationship(target, value, oldvalue, initiator):
-        if target.group_id is not None:
-            # Получаем группу, связанную с текущей статьей
-            group = GroupModel.query.get(target.group_id)
+        if value is not None:
+            group = GroupModel.query.get(value)
             if group:
-                # Если группа существует, добавляем текущую статью в список постов этой группы
                 if target not in group.posts:
                     group.posts.append(target)
                     db.session.commit()
@@ -206,12 +229,54 @@ class Article(db.Model):
         return user.login if user else 'Unknown'
 
     def author_avatar_url(self):
-        return url_for('static', filename=f'avatars/{self.author.file}') if self.author.file else url_for('static',
-                                                                                                          filename='avatars/default-avatar.png')
+        return url_for('static', filename=f'avatars/{self.author.file}') if self.author.file else url_for('static', filename='avatars/default-avatar.png')
+
+    def can_edit(self, user):
+        """Проверка прав на редактирование поста."""
+        return user.is_authenticated and (user.is_admin or user.is_moderator or self.author_id == user.id)
+
+    def can_delete(self, user):
+        """Проверка прав на удаление поста."""
+        return user.is_authenticated and (user.is_admin or user.is_moderator or self.author_id == user.id)
+
+    def edit(self, title, intro, text):
+        """Метод для редактирования поста."""
+        self.title = title
+        self.intro = intro
+        self.text = text
+        db.session.commit()
+
+    def delete(self):
+        """Метод для удаления поста."""
+        db.session.delete(self)
+        db.session.commit()
 
     def __repr__(self):
         return f'<Article {self.id}>'
 
 
+event.listen(Article.group_associations, 'set', Article.update_group_relationship)
 
 
+class Admin(db.Model):
+    __tablename__ = 'admins'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), unique=True, nullable=False)
+
+    user = db.relationship('User', backref=db.backref('admin', uselist=False))
+
+    def __init__(self, user_id):
+        self.user_id = user_id
+
+
+class Moderator(db.Model):
+    __tablename__ = 'moderators'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), unique=True, nullable=False)
+
+    user = db.relationship('User', back_populates='moderator_role')
+
+    def __init__(self, user_id):
+        self.user_id = user_id

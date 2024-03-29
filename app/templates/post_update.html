@@ -16,7 +16,6 @@
             </ul>
         {% endif %}
     {% endwith %}
-
     <h1>Обновление статьи</h1>
     <form id="update-form" method="post" action="{{ url_for('main.post_update', id=article.id) }}" enctype="multipart/form-data" onsubmit="updatePost(event)">
         <input type="text" name="title" id="title" class="form-control" value="{{ article.title }}" placeholder="Введите название"><br>
@@ -137,6 +136,8 @@ function updatePost(event) {
     event.preventDefault(); // Предотвращаем стандартное действие формы
 
     let form = document.getElementById('update-form');
+    console.log('Form data:', new FormData(form)); // Добавим вывод содержимого формы в консоль
+
     let formData = new FormData(form);
 
     // Очистим скрытое поле groups
@@ -179,6 +180,7 @@ function updatePost(event) {
     })
     .catch(error => {
         console.error('Ошибка при обновлении поста:', error);
+        console.log('FormData:', formData); // Выведем FormData в консоль
         alert('Произошла ошибка при обновлении поста. Проверьте консоль для дополнительной информации.');
     });
 }
