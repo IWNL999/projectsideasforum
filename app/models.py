@@ -95,6 +95,8 @@ class User(UserMixin, db.Model):
     user_groups = db.relationship('UserGroup', back_populates='user', foreign_keys=[UserGroup.user_id])
     groups = db.relationship('GroupModel', secondary='user_group', back_populates='members')
     authored_groups = db.relationship('GroupModel', back_populates='author', foreign_keys='GroupModel.author_id')
+    moderator_role = db.relationship('Moderator', back_populates='user')
+    admin = db.relationship('Admin', back_populates='user')
 
     liked_users = db.relationship('User', secondary='like',
                                   primaryjoin='User.id == like.c.user_id',
@@ -264,7 +266,7 @@ class Admin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), unique=True, nullable=False)
 
-    user = db.relationship('User', backref=db.backref('admin', uselist=False))
+    user = db.relationship('User', back_populates='admin')
 
     def __init__(self, user_id):
         self.user_id = user_id
@@ -280,3 +282,5 @@ class Moderator(db.Model):
 
     def __init__(self, user_id):
         self.user_id = user_id
+
+
