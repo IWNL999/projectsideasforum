@@ -592,3 +592,33 @@ def delete_group(group_id):
         print(f"Error deleting group: {e}")
 
     return redirect(url_for('main.groups'))
+
+
+@bp.route('/admin_panel', methods=['GET'])
+def admin_panel():
+    if current_user.is_authenticated and current_user.is_admin:
+        return render_template('admin-panel.html')
+    else:
+        # Если пользователь не аутентифицирован или не является администратором, перенаправляем его на другую страницу
+        return redirect(url_for('main.index'))
+
+
+@bp.route('/assign_role/<int:user_id>', methods=['POST'])
+def assign_roles(user_id):
+    if not current_user.is_authenticated or not current_user.is_admin:
+        flash('Доступ запрещен!', 'error')
+        return redirect(url_for('main.index'))
+
+    role = request.form.get('role')
+    if role not in ['user', 'moderator', 'admin']:
+        flash('Неверная роль!', 'error')
+        return redirect(url_for('admin_panel'))
+
+    user = User.query.get(user_id)
+    if not user:
+        flash('Пользователь не найден!', 'error')
+    else:
+        user.set_role(role)
+        flash(f'Роль "{role}" назначена пользователю успешно!', 'success')
+
+    return redirect(url_for('admin_panel'))

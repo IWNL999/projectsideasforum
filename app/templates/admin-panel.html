@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Административная панель
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Административная панель</h1>
+
+    <div class="admin-actions">
+        <h2>Действия администратора</h2>
+        <ul>
+            <li><a href="{{ url_for('admin.assign_roles') }}">Назначить роли</a></li>
+            <!-- Добавьте здесь другие кнопки по необходимости -->
+        </ul>
+    </div>
+</div>
+{% endblock %}

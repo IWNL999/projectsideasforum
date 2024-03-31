@@ -185,6 +185,12 @@ function updatePost(event) {
     });
 }
 
+function confirmAndDelete(image) {
+    if (confirm('Вы уверены, что хотите удалить это изображение?')) {
+        deleteImage(image);
+    }
+}
+
 
 function deleteImage(image) {
     console.log('Удаляем изображение:', image); // Проверка, отправляется ли запрос на удаление
@@ -203,7 +209,9 @@ function deleteImage(image) {
     })
     .then(data => {
         alert(data.message);
-        location.reload(); // Перезагрузить страницу после успешного удаления
+        // Удаляем превью изображения из DOM
+        var imageContainer = document.querySelector(`.image-container img[src*="${image}"]`).closest('.image-container');
+        imageContainer.remove();
     })
     .catch(error => {
         console.error('Ошибка:', error);

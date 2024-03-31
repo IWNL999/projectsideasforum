@@ -62,7 +62,8 @@ class GroupModel(db.Model):
     posts = db.relationship('Article',
                             secondary='article_group_association',
                             backref=db.backref('groups', lazy='dynamic'),
-                            lazy='dynamic')
+                            lazy='dynamic',
+                            overlaps="article")
     user_groups = db.relationship('UserGroup', back_populates='group')
     author = db.relationship('User', back_populates='authored_groups', foreign_keys=[author_id])
     members = db.relationship('User', secondary='user_group', back_populates='groups')
@@ -89,6 +90,8 @@ class User(UserMixin, db.Model):
     comments = db.Column(db.Text)
     recipient_id = db.Column(db.Integer, db.ForeignKey('users1.id'))
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
+    is_admin = db.Column(db.Boolean, default=False)
+    is_moderator = db.Column(db.Boolean, default=False)
 
     user_articles = db.relationship("Article", back_populates="author")
     user_comments = db.relationship("Comment", back_populates="author")
@@ -270,6 +273,9 @@ class Admin(db.Model):
 
     def __init__(self, user_id):
         self.user_id = user_id
+        user = User.query.get(user_id)
+        user.is_admin = True
+        db.session.commit()
 
 
 class Moderator(db.Model):
@@ -282,5 +288,3 @@ class Moderator(db.Model):
 
     def __init__(self, user_id):
         self.user_id = user_id
-
-
