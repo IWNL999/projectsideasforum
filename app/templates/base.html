@@ -80,17 +80,9 @@
                             <button type="submit" class="btn btn-outline-light">Искать</button>
                         </div>
                     </form>
-
-                    <script>
-                        function searchPosts() {
-                            var searchTerm = document.getElementById('search-input').value;
-                            console.log('Поиск по запросу:', searchTerm);
-                        }
-                    </script>
-
                     <div class="text-end">
                         {% if g.current_user and g.current_user.is_admin %}
-                            <a href="{{ url_for('main.admin_panel') }}" class="btn btn-outline-light me-2">Админ Панель</a>
+                            <a href="{{ url_for('main.admin.admin_panel') }}" class="btn btn-outline-light me-2">Админ Панель</a>
                         {% endif %}
                             <!-- Добавляем проверку, что пользователь аутентифицирован -->
                         {% if g.current_user %}
@@ -126,6 +118,11 @@
 </html>
 
 <script>
+function searchPosts() {
+    var searchTerm = document.getElementById('search-input').value;
+    console.log('Поиск по запросу:', searchTerm);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     // Найти все кнопки удаления с классом btn-delete-confirm
     var deleteButtons = document.querySelectorAll('.btn-delete-confirm');

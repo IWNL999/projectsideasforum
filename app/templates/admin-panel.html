@@ -1,19 +1,61 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Административная панель
+    Административная панель
 {% endblock %}
 
 {% block content %}
 <div class="container">
     <h1>Административная панель</h1>
-
-    <div class="admin-actions">
-        <h2>Действия администратора</h2>
-        <ul>
-            <li><a href="{{ url_for('admin.assign_roles') }}">Назначить роли</a></li>
-            <!-- Добавьте здесь другие кнопки по необходимости -->
-        </ul>
+    <div class="admin-actionsmy-3 p-3 bg-body rounded shadow-sm">
+        <div class="user-roles">
+            <h2>Пользователи</h2>
+            <ul class="user-list">
+                {% for user in all_users %}
+                    <div class="d-flex text-body-secondary pt-3">
+                        <a class="user-link" href='/profile/{{ user.id }}'>
+                            <img class="img-avatar" src="{{ user.avatar_url }}" alt="{{ user.login }} Avatar">
+                        </a>
+                        <p class="textpr pb-3 mb-0 small lh-sm border-bottom ">
+                            <a class="btn d-flex d-block text-gray-dark" href='/profile/{{ user.id }}'>@{{ user.login }}</a>
+                            {% if user.description %}
+                                {{ user.description }}
+                            {% else %}
+                                <!-- Если описание профиля пользователя отсутствует, выводим пустое место -->
+                                &nbsp;
+                            {% endif %}
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Выбрать роль
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li><a class="dropdown-item" href="#" onclick="assignRole('{{ user.id }}', 'user')">Пользователь</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="assignRole('{{ user.id }}', 'moderator')">Модератор</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="assignRole('{{ user.id }}', 'admin')">Администратор</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="assignRole('{{ user.id }}', 'banned')">Забанен</a></li>
+                                </ul>
+                            </div>
+                        </p>
+                    </div>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 </div>
+
+<script>
+    function assignRole(userId, role) {
+        fetch(`/assign_role/${userId}/${role}`, { method: 'POST' })
+            .then(response => {
+                if (response.ok) {
+                    // Обновить страницу или выполнить другие действия при успешном изменении роли
+                    location.reload();
+                } else {
+                    console.error('Ошибка при изменении роли');
+                }
+            })
+            .catch(error => console.error('Ошибка при отправке запроса:', error));
+    }
+</script>
 {% endblock %}
+

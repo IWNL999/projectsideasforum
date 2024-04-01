@@ -92,7 +92,9 @@ class User(UserMixin, db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
     is_admin = db.Column(db.Boolean, default=False)
     is_moderator = db.Column(db.Boolean, default=False)
+    is_banned = db.Column(db.Boolean, default=False)
 
+    banned_users = db.relationship('BannedUser', back_populates='user', uselist=False)
     user_articles = db.relationship("Article", back_populates="author")
     user_comments = db.relationship("Comment", back_populates="author")
     user_groups = db.relationship('UserGroup', back_populates='user', foreign_keys=[UserGroup.user_id])
@@ -288,3 +290,17 @@ class Moderator(db.Model):
 
     def __init__(self, user_id):
         self.user_id = user_id
+
+
+class BannedUser(db.Model):
+    __tablename__ = 'banned_users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), unique=True, nullable=False)
+    reason = db.Column(db.String(255), nullable=False)
+    banned_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', back_populates='banned_users')
+
+    def __init__(self, user_id, reason):
+        self.user_id = user_id
+        self.reason = reason
