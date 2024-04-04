@@ -16,26 +16,46 @@
                         <a class="user-link" href='/profile/{{ user.id }}'>
                             <img class="img-avatar" src="{{ user.avatar_url }}" alt="{{ user.login }} Avatar">
                         </a>
-                        <p class="textpr pb-3 mb-0 small lh-sm border-bottom ">
-                            <a class="btn d-flex d-block text-gray-dark" href='/profile/{{ user.id }}'>@{{ user.login }}</a>
-                            {% if user.description %}
-                                {{ user.description }}
-                            {% else %}
-                                <!-- Если описание профиля пользователя отсутствует, выводим пустое место -->
-                                &nbsp;
-                            {% endif %}
-                            <div class="dropdown">
-                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Выбрать роль
-                                </button>
-                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                    <li><a class="dropdown-item" href="#" onclick="assignRole('{{ user.id }}', 'user')">Пользователь</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="assignRole('{{ user.id }}', 'moderator')">Модератор</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="assignRole('{{ user.id }}', 'admin')">Администратор</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="assignRole('{{ user.id }}', 'banned')">Забанен</a></li>
-                                </ul>
+                        <div class="d-flex flex-column ms-3">
+                            <p class="textpr pb-1 mb-0 small lh-sm">
+                                <a class="btn d-flex d-block text-gray-dark" href='/profile/{{ user.id }}'>@{{ user.login }}</a>
+                                {% if user.description %}
+                                    <span>{{ user.description }}</span>
+                                {% endif %}
+                            </p>
+                            <div class="d-flex align-items-center">
+                                <div class="dropdown me-2">
+                                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        {% if user.is_admin %}
+                                            Администратор
+                                        {% elif user.is_moderator %}
+                                            Модератор
+                                        {% else %}
+                                            Пользователь
+                                        {% endif %}
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="assignRole('{{ user.id }}', 'user')">Пользователь</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="assignRole('{{ user.id }}', 'moderator')">Модератор</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="assignRole('{{ user.id }}', 'admin')">Администратор</a></li>
+                                    </ul>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        {% if user.banned_users %}
+                                            Забанен: {{ user.banned_users.reason }}
+                                        {% else %}
+                                            Забанить
+                                        {% endif %}
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="banUser('{{ user.id }}', 'reason1')">Причина бана 1</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="banUser('{{ user.id }}', 'reason2')">Причина бана 2</a></li>
+                                        <!-- Добавьте другие причины бана по аналогии -->
+                                    </ul>
+                                </div>
                             </div>
-                        </p>
+                        </div>
                     </div>
                 {% endfor %}
             </ul>
@@ -44,18 +64,32 @@
 </div>
 
 <script>
-    function assignRole(userId, role) {
-        fetch(`/assign_role/${userId}/${role}`, { method: 'POST' })
-            .then(response => {
-                if (response.ok) {
-                    // Обновить страницу или выполнить другие действия при успешном изменении роли
-                    location.reload();
-                } else {
-                    console.error('Ошибка при изменении роли');
-                }
-            })
-            .catch(error => console.error('Ошибка при отправке запроса:', error));
-    }
+function assignRole(user_id, role) {
+    console.log(user_id, role)
+    fetch(`/admin/assign_role/${user_id}/${role}`, { method: 'POST' })
+        .then(response => {
+            if (response.ok) {
+                // Обновить страницу или выполнить другие действия при успешном изменении роли
+                location.reload();
+            } else {
+                console.error('Ошибка при изменении роли');
+            }
+        })
+        .catch(error => console.error('Ошибка при отправке запроса:', error));
+}
+function banUser(user_id, reason) {
+    console.log(user_id, reason);
+    fetch(`/admin/ban_user/${user_id}/${reason}`, { method: 'POST' })
+        .then(response => {
+            if (response.ok) {
+                // Обновить страницу или выполнить другие действия при успешном бане пользователя
+                location.reload();
+            } else {
+                console.error('Ошибка при бане пользователя');
+            }
+        })
+        .catch(error => console.error('Ошибка при отправке запроса:', error));
+}
 </script>
 {% endblock %}
 

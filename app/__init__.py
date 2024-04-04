@@ -32,8 +32,14 @@ def create_app():
     bcrypt.init_app(app)
     login_manager.init_app(app)
 
-    from app.main import bp
-    app.register_blueprint(bp)
+    from app.main import bp as main_bp
+    from app.admin import admin_bp
+
+    # Регистрируем Blueprint для основной части приложения
+    app.register_blueprint(main_bp)
+
+    # Регистрируем Blueprint для административной панели
+    app.register_blueprint(admin_bp, url_prefix='/admin')
 
     return app
 
