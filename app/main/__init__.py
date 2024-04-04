@@ -6,5 +6,3 @@ bp = Blueprint('main', __name__)
 # Регистрируем Blueprint для административной панели
 bp.register_blueprint(admin_bp, url_prefix='/admin')
 from app.main import routes
-
-

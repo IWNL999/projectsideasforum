@@ -44,6 +44,9 @@ def create_app():
     return app
 
 
+app = create_app()
+
+
 def create_tables():
     try:
         db.create_all()

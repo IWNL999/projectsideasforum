@@ -2,9 +2,9 @@
 import sys
 sys.path.insert(0, '/var/www/projectsideasforum')  
 
-from app.main import app as application  
+from app.__init__ import app as application
 
-application.secret_key = 'dfhdhfwqhjggx3463n32462h'  
+application.secret_key = 'dfhdhfwqhjggx3463n32462h'
 
 if __name__ == '__main__':
     application.run()
