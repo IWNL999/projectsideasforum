@@ -37,6 +37,11 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def check_file_type(filename):
+    image_extensions = ('.png', '.jpg', '.jpeg', '.gif')
+    return filename.lower().endswith(image_extensions)
+
+
 @bp.route('/')
 @bp.route('/home')
 def index():
@@ -84,7 +89,8 @@ def post_detail(id):
     # Получим комментарии для данной статьи
     comments = Comment.query.filter_by(article_id=id).all()
 
-    return render_template("post_detail.html", article=article, form=form, comments=comments)
+    # Передаем функцию allowed_file в контекст шаблона
+    return render_template('post_detail.html', article=article, form=form, comments=comments, allowed_file=allowed_file)
 
 
 @bp.route('/posts/<int:id>/delete_comment/<int:comment_id>', methods=['POST'])

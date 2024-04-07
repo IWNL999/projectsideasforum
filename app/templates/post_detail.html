@@ -25,21 +25,28 @@
             <p>{{ article.intro }}</p>
             <p>{{ article.text }}</p>
             {% if article.file %}
-                {% set images = article.file.split(',') %}
-                {% for image in images %}
-                    <img src="{{ url_for('static', filename='post_files/' + image.strip()) }}" alt="Post Image" class="img-fluid post-image" onclick="openModal(this.src)">
+                {% set files = article.file.split(',') %}
+                {% for file in files %}
+                    {% if allowed_file(file) %}
+                        <img src="{{ url_for('static', filename='post_files/' + file.strip()) }}" alt="File Preview" class="img-fluid post-image" data-file-url="{{ url_for('static', filename='post_files/' + file.strip()) }}">
+                    {% else %}
+                        <button class="btn btn-primary file-button" onclick="openFileModal('{{ url_for('static', filename='post_files/' + file.strip()) }}')">{{ file }}</button>
+                    {% endif %}
                 {% endfor %}
             {% else %}
-                <p>No images available</p>
+                <p>No files available</p>
             {% endif %}
-            {% if article.additional_images %}
-                {% for additional_image in article.additional_images %}
-                    <img src="{{ url_for('static', filename='post_files/' + additional_image) }}" alt="Additional Post Image" class="img-fluid post-image" onclick="openModal(this.src)">
+            {% if article.additional_files %}
+                {% for additional_file in article.additional_files %}
+                    {% if allowed_file(additional_file) %}
+                        <img src="{{ url_for('static', filename='post_files/' + additional_file) }}" alt="File Preview" class="img-fluid post-image" data-file-url="{{ url_for('static', filename='post_files/' + additional_file) }}">
+                    {% else %}
+                        <button class="btn btn-primary file-button" onclick="openFileModal('{{ url_for('static', filename='post_files/' + additional_file) }}')">{{ additional_file }}</button>
+                    {% endif %}
                 {% endfor %}
             {% endif %}
             <!-- Горизонтальная черта -->
             <hr class="my-4">
-
             <div class="post-actions">
                 {% if current_user.is_authenticated and current_user.id == article.author.id %}
                     <form method="post" action="{{ url_for('main.post_delete', id=article.id, next=request.path) }}" class="d-inline">
@@ -47,7 +54,6 @@
                         <a href="{{ url_for('main.post_update', id=article.id) }}" class="btn btn-warning">Изменить</a>
                         <button type="submit" class="btn btn-danger btn-delete-confirm btn-sm">Удалить</button>
                     </form>
-
 
                     <form class="btn-hide float-right d-inline" method="post" action="{{ url_for('main.hide_post', id=article.id) }}">
                         {{ form.hidden_tag() }}
@@ -99,28 +105,57 @@
     </div>
 </div>
 
-<!-- Модальное окно для просмотра изображений -->
-<div id="myModal" class="modal">
+<!-- Модальное окно для просмотра файлов -->
+<div id="fileModal" class="modal">
     <span class="close">&times;</span>
-    <img class="modal-content" id="modal-img">
+    <iframe id="fileIframe" class="modal-content"></iframe>
+</div>
+<!-- Модальное окно для просмотра изображений -->
+<div id="imageModal" class="modal">
+    <span class="close">&times;</span>
+    <img id="imageModalImage" class="modal-content" onclick="closeImageModal()">
 </div>
 
 <script>
-    // Открыть модальное окно с изображением при клике на изображение
-    document.querySelectorAll('.post-image').forEach(image => {
-        image.addEventListener('click', function() {
-            const modal = document.getElementById("myModal");
-            const modalImg = document.getElementById("modal-img");
-            modal.style.display = "block";
-            modalImg.src = this.src;
-        });
+// Открыть модальное окно с файлом при клике на изображение
+document.querySelectorAll('.post-image').forEach(function(image) {
+    image.addEventListener('click', function() {
+        const imageUrl = this.getAttribute('data-file-url');
+        const modal = document.getElementById("imageModal");
+        const imageModal = document.getElementById("imageModalImage");
+        imageModal.src = imageUrl;
+        modal.style.display = "block";
     });
+});
 
-    // Закрыть модальное окно при клике на кнопку закрытия
-    document.querySelector('.close').addEventListener('click', function() {
-        const modal = document.getElementById("myModal");
+// Закрыть модальное окно при клике на кнопку закрытия
+document.querySelectorAll('.close').forEach(function(closeButton) {
+    closeButton.addEventListener('click', function() {
+        const modal = document.getElementById("imageModal");
         modal.style.display = "none";
     });
+});
+
+// Изменение курсора при наведении на изображение
+document.querySelectorAll('.post-image').forEach(function(image) {
+    image.addEventListener('mouseover', function() {
+        this.style.cursor = 'pointer';
+    });
+});
+
+// Открыть модальное окно с файлом при клике на кнопку файла
+function openFileModal(fileUrl) {
+    const modal = document.getElementById("fileModal");
+    const fileIframe = document.getElementById("fileIframe");
+    fileIframe.src = fileUrl;
+    modal.style.display = "block";
+}
+
+// Закрыть модальное окно при клике на кнопку закрытия
+document.querySelector('.close').addEventListener('click', function() {
+    const modal = document.getElementById("fileModal");
+    modal.style.display = "none";
+});
 </script>
 
 {% endblock %}
