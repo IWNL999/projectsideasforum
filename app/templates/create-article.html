@@ -26,7 +26,7 @@
             </div>
             <div class="form-file">
                 <label for="file" class="btn btn-secondary">Добавить файлы</label>
-                <input type="file" name="file" id="file" style="display:none" accept="image/*" multiple="true">
+                <input type="file" name="file" id="file" style="display:none" accept="*/*" multiple="true">
             </div>
         </div>
         <div id="file-preview-container" class="mt-3 "></div>
@@ -42,32 +42,30 @@ document.getElementById('file').addEventListener('change', function(e) {
     filePreviewContainer.innerHTML = '';
 
     for (const file of fileInput.files) {
-        if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
+        const filePreview = document.createElement('div');
+        filePreview.className = 'file-preview';
 
-            reader.onload = function(event) {
-                const imagePreview = document.createElement('div');
-                imagePreview.className = 'image-container';
-                const img = document.createElement('img');
-                img.src = event.target.result;
-                img.classList.add('img-preview');
-                imagePreview.appendChild(img);
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-file'; // Используйте иконку по вашему выбору
 
-                const deleteButton = document.createElement('button');
-                deleteButton.className = 'btn btn-danger btn-sm delete-btn';
-                deleteButton.innerText = 'Удалить';
-                deleteButton.onclick = function() {
-                    imagePreview.remove(); // Удаляем превью изображения при нажатии на кнопку удаления
-                };
-                imagePreview.appendChild(deleteButton);
+        const fileInfo = document.createElement('span');
+        fileInfo.textContent = file.name;
 
-                filePreviewContainer.appendChild(imagePreview);
-            };
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'btn btn-danger btn-sm delete-btn';
+        deleteButton.innerText = 'Удалить';
+        deleteButton.onclick = function() {
+            filePreview.remove(); // Удаляем превью файла при нажатии на кнопку удаления
+        };
 
-            reader.readAsDataURL(file);
-        }
+        filePreview.appendChild(icon);
+        filePreview.appendChild(fileInfo);
+        filePreview.appendChild(deleteButton);
+
+        filePreviewContainer.appendChild(filePreview);
     }
 });
+
 
 function createPost(event) {
     event.preventDefault(); // Предотвращаем стандартное действие формы

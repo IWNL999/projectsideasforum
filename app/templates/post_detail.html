@@ -27,14 +27,14 @@
             {% if article.file %}
                 {% set images = article.file.split(',') %}
                 {% for image in images %}
-                    <img src="{{ url_for('static', filename='post_pictures/' + image.strip()) }}" alt="Post Image" class="img-fluid post-image" onclick="openModal(this.src)">
+                    <img src="{{ url_for('static', filename='post_files/' + image.strip()) }}" alt="Post Image" class="img-fluid post-image" onclick="openModal(this.src)">
                 {% endfor %}
             {% else %}
                 <p>No images available</p>
             {% endif %}
             {% if article.additional_images %}
                 {% for additional_image in article.additional_images %}
-                    <img src="{{ url_for('static', filename='post_pictures/' + additional_image) }}" alt="Additional Post Image" class="img-fluid post-image" onclick="openModal(this.src)">
+                    <img src="{{ url_for('static', filename='post_files/' + additional_image) }}" alt="Additional Post Image" class="img-fluid post-image" onclick="openModal(this.src)">
                 {% endfor %}
             {% endif %}
             <!-- Горизонтальная черта -->

@@ -72,7 +72,7 @@
                 {% set images = article.file.split(',') %}
                 {% for image in images %}
                     <div class="image-container">
-                        <img src="{{ url_for('static', filename='post_pictures/' + image) }}" class="post-image-edit">
+                        <img src="{{ url_for('static', filename='post_files/' + image) }}" class="post-image-edit">
                         <button type="button" id="delete-preview-image-{{ loop.index }}" class="btn btn-danger btn-sm delete-btn" onclick="confirmAndDelete('{{ image }}')">Удалить</button>
                     </div>
                 {% endfor %}

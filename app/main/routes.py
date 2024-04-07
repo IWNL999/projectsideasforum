@@ -118,9 +118,9 @@ def create_article():
         for file in files:
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                file_path = os.path.join(current_app.root_path, 'static', 'post_pictures', filename)
+                file_path = os.path.join(current_app.root_path, 'static', 'post_files', filename)
                 file.save(file_path)
-                filenames.append(filename)
+                filenames.append(filename)  # Сохраняем имя файла
 
         try:
             # Создание новой статьи с соответствующими именами файлов
@@ -186,7 +186,7 @@ def post_update(id):
         for new_file in new_files:
             if new_file and allowed_file(new_file.filename):
                 new_filename = secure_filename(new_file.filename)
-                file_path = os.path.join(current_app.root_path, 'static', 'post_pictures', new_filename)
+                file_path = os.path.join(current_app.root_path, 'static', 'post_files', new_filename)
                 new_file.save(file_path)
                 new_filenames.append(new_filename)
 
