@@ -28,9 +28,13 @@
                 {% set files = article.file.split(',') %}
                 {% for file in files %}
                     {% if allowed_file(file) %}
-                        <img src="{{ url_for('static', filename='post_files/' + file.strip()) }}" alt="File Preview" class="img-fluid post-image" data-file-url="{{ url_for('static', filename='post_files/' + file.strip()) }}">
+                        {% if file.endswith(('.jpg', '.jpeg', '.png', '.gif')) %}
+                            <img src="{{ url_for('static', filename='post_files/' + file.strip()) }}" alt="File Preview" class="img-fluid post-image" data-file-url="{{ url_for('static', filename='post_files/' + file.strip()) }}">
+                        {% else %}
+                            <button class="btn btn-primary file-button" onclick="openFileModal('{{ url_for('static', filename='post_files/' + file.strip()) }}')">{{ file }}</button>
+                        {% endif %}
                     {% else %}
-                        <button class="btn btn-primary file-button" onclick="openFileModal('{{ url_for('static', filename='post_files/' + file.strip()) }}')">{{ file }}</button>
+                        <p>Файл {{ file }} не поддерживается</p>
                     {% endif %}
                 {% endfor %}
             {% else %}
@@ -39,9 +43,13 @@
             {% if article.additional_files %}
                 {% for additional_file in article.additional_files %}
                     {% if allowed_file(additional_file) %}
-                        <img src="{{ url_for('static', filename='post_files/' + additional_file) }}" alt="File Preview" class="img-fluid post-image" data-file-url="{{ url_for('static', filename='post_files/' + additional_file) }}">
+                        {% if additional_file.endswith(('.jpg', '.jpeg', '.png', '.gif')) %}
+                            <img src="{{ url_for('static', filename='post_files/' + additional_file) }}" alt="File Preview" class="img-fluid post-image" data-file-url="{{ url_for('static', filename='post_files/' + additional_file) }}">
+                        {% else %}
+                            <button class="btn btn-primary file-button" onclick="openFileModal('{{ url_for('static', filename='post_files/' + additional_file) }}')">{{ additional_file }}</button>
+                        {% endif %}
                     {% else %}
-                        <button class="btn btn-primary file-button" onclick="openFileModal('{{ url_for('static', filename='post_files/' + additional_file) }}')">{{ additional_file }}</button>
+                        <p>Файл {{ additional_file }} не поддерживается</p>
                     {% endif %}
                 {% endfor %}
             {% endif %}
@@ -105,11 +113,12 @@
     </div>
 </div>
 
-<!-- Модальное окно для просмотра файлов -->
+<!-- Модальное окно для просмотра файла -->
 <div id="fileModal" class="modal">
     <span class="close">&times;</span>
-    <iframe id="fileIframe" class="modal-content"></iframe>
+    <pre id="fileContent" class="modal-content"></pre>
 </div>
+
 <!-- Модальное окно для просмотра изображений -->
 <div id="imageModal" class="modal">
     <span class="close">&times;</span>
@@ -131,8 +140,10 @@ document.querySelectorAll('.post-image').forEach(function(image) {
 // Закрыть модальное окно при клике на кнопку закрытия
 document.querySelectorAll('.close').forEach(function(closeButton) {
     closeButton.addEventListener('click', function() {
-        const modal = document.getElementById("imageModal");
-        modal.style.display = "none";
+        const imageModal = document.getElementById("imageModal");
+        const fileModal = document.getElementById("fileModal");
+        imageModal.style.display = "none";
+        fileModal.style.display = "none";
     });
 });
 
@@ -146,15 +157,33 @@ document.querySelectorAll('.post-image').forEach(function(image) {
 // Открыть модальное окно с файлом при клике на кнопку файла
 function openFileModal(fileUrl) {
     const modal = document.getElementById("fileModal");
-    const fileIframe = document.getElementById("fileIframe");
-    fileIframe.src = fileUrl;
-    modal.style.display = "block";
+    const fileContent = document.getElementById("fileContent");
+
+    // Создаем AJAX-запрос для загрузки содержимого файла
+    const xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                // В случае успешной загрузки файла, отображаем его содержимое в модальном окне
+                fileContent.textContent = xhr.responseText;
+                modal.style.display = "block";
+            } else {
+                // Если возникла ошибка при загрузке файла, выводим сообщение об ошибке
+                fileContent.textContent = 'Ошибка загрузки файла';
+                modal.style.display = "block";
+            }
+        }
+    };
+    xhr.open('GET', fileUrl, true);
+    xhr.send();
 }
 
 // Закрыть модальное окно при клике на кнопку закрытия
-document.querySelector('.close').addEventListener('click', function() {
-    const modal = document.getElementById("fileModal");
-    modal.style.display = "none";
+document.querySelectorAll('.close').forEach(function(closeButton) {
+    closeButton.addEventListener('click', function() {
+        const modal = document.getElementById("fileModal");
+        modal.style.display = "none";
+    });
 });
 </script>
 

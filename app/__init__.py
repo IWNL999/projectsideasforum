@@ -23,7 +23,7 @@ def create_app():
 
     # Установка пути к папке загрузки файлов для картинок постов
     UPLOAD_FOLDER_POST_FILES = os.path.join('app', 'static', 'post_files')
-    app.config['UPLOAD_FOLDER_POST_PICTURES'] = UPLOAD_FOLDER_POST_FILES
+    app.config['UPLOAD_FOLDER_POST_FILES'] = UPLOAD_FOLDER_POST_FILES
 
     # Установка максимального размера загружаемого файла
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1920 * 1080

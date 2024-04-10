@@ -34,7 +34,7 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename
 
 
 def check_file_type(filename):
@@ -187,6 +187,7 @@ def post_update(id):
         group_ids_str = request.form.get('groups', '')
         group_ids = [int(group_id) for group_id in group_ids_str.split(',') if group_id.strip()]
 
+        # Обработка загружаемых файлов
         new_files = request.files.getlist('file')
         new_filenames = []
         for new_file in new_files:
@@ -251,7 +252,7 @@ def delete_post_image(id, filename):
         if filename in post.file.split(','):
             try:
                 # Удаляем файл изображения из папки
-                file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], filename)
+                file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_FILES'], filename)
                 if os.path.exists(file_path):
                     os.remove(file_path)
 

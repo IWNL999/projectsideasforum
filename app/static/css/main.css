@@ -632,3 +632,7 @@ a:hover {
     margin-top: 20px;
     margin-bottom: 10px;
 }
+
+input[type="file"] {
+    display: none; /* Скрыть стандартный вид input для файлов */
+}
