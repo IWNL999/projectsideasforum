@@ -336,32 +336,23 @@ a:hover {
     border: 2px solid #ffA500;
 }
 
-.post-id-avatar {
-    width: 128px;
-    height: 128px;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 2px solid #ffA500;
-    position: -webkit-sticky;
-    position: sticky;
-    z-index: 1;
-    margin-top: 10px;
-    margin-left: 80px;
-}
-
 .comment-avatar {
     width: 64px;
     height: 64px;
     object-fit: cover;
     border-radius: 50%;
     border: 2px solid #ffA500;
-    position: -webkit-sticky;
-    position: sticky;
-    top: 20px;
-    z-index: 1;
     margin-right: 10px;
 }
 
+.post-id-avatar {
+    width: 128px;
+    height: 128px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #ffA500;
+    margin-top: 10px;
+}
 
 .comment-container {
     margin-bottom: 10px;
@@ -413,46 +404,6 @@ a:hover {
   border-radius: 5px;
 }
 
-/* Стили для модального окна */
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 1;
-  padding-top: 100px;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgb(0,0,0);
-  background-color: rgba(0,0,0,0.9);
-}
-
-/* Стили для изображения в модальном окне */
-.modal-content {
-  margin: auto;
-  display: block;
-  width: 80%;
-  max-width: 700px;
-}
-
-/* Стили для кнопки закрытия модального окна */
-.close {
-  position: absolute;
-  top: 15px;
-  right: 35px;
-  color: #f1f1f1;
-  font-size: 40px;
-  font-weight: bold;
-  transition: 0.3s;
-}
-
-.close:hover,
-.close:focus {
-  color: #bbb;
-  text-decoration: none;
-  cursor: pointer;
-}
 
 .btn-hide{
     margin: 0;
@@ -487,8 +438,8 @@ a:hover {
 }
 
 .post-image {
-    max-width: 64px;
-    max-height: 64px;
+    max-width: 128px;
+    max-height: 128px;
     object-fit: cover; /* Масштабирование изображения с сохранением пропорций и обрезкой */
 }
 
@@ -635,4 +586,24 @@ a:hover {
 
 input[type="file"] {
     display: none; /* Скрыть стандартный вид input для файлов */
+}
+
+.input-field {
+    transition: border-color 0.2s ease-in-out;
+    border-color: #ced4da; /* Стандартный цвет обводки */
+}
+
+.input-field:focus {
+    border-color: #80bdff; /* Цвет обводки при фокусе */
+}
+
+.input-field.error {
+    border-color: #dc3545; /* Цвет обводки при ошибке */
+}
+
+.avatar-container {
+    position: relative;
+    width: 64px; /* Ширина аватара */
+    flex-shrink: 0; /* Запрещаем аватару сжиматься */
+    margin-right: 10px; /* Отступ между аватаром и контентом */
 }

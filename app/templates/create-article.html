@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Добавление статьи
+    Добавление статьи
 {% endblock %}
 
 {% block content %}
@@ -20,7 +20,7 @@
     <form id="create-form" method="post" enctype="multipart/form-data" onsubmit="createPost(event)">
         <div class="form-container">
             <div class="form-inputs">
-                <input type="text" name="title" id="title" class="form-control" placeholder="Введите название"><br>
+                <input type="text" name="title" id="title" class="form-control input-field" placeholder="Введите название" {% if failed_attempt %}class="error"{% endif %} required><br>
                 <textarea name="intro" id="intro" class="form-control" placeholder="Введите анонс"></textarea><br>
                 <textarea name="text" id="text" class="form-control" placeholder="Введите основной текст"></textarea><br>
             </div>
@@ -80,9 +80,18 @@ document.getElementById('file').addEventListener('change', function(e) {
     }
 });
 
-
 function createPost(event) {
     event.preventDefault(); // Предотвращаем стандартное действие формы
+
+    // Проверка наличия названия статьи
+    const titleInput = document.getElementById('title');
+    if (!titleInput.value.trim()) {
+        titleInput.classList.add('is-invalid'); // Добавляем красную обводку, если название не введено
+        return; // Прерываем выполнение функции, если название не введено
+    }
+
+    // Удаляем красную обводку, если она была добавлена
+    titleInput.classList.remove('is-invalid');
 
     let form = document.getElementById('create-form');
     let formData = new FormData(form);
@@ -103,5 +112,6 @@ function createPost(event) {
         alert('Произошла ошибка при добавлении поста. Проверьте консоль для дополнительной информации.');
     });
 }
+
 </script>
 {% endblock %}

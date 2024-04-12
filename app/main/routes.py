@@ -112,10 +112,14 @@ def delete_comment(id, comment_id):
 @bp.route('/create-article', methods=['POST', 'GET'])
 @login_required
 def create_article():
+    failed_attempt = False
     if request.method == "POST":
         title = request.form['title']
         intro = request.form['intro']
         text = request.form['text']
+
+        if not title:  # Проверяем, была ли неудачная попытка из-за отсутствия названия
+            failed_attempt = True
 
         # Обработка файлов
         files = request.files.getlist('file')
@@ -140,7 +144,7 @@ def create_article():
             return "При добавлении статьи произошла ошибка"
 
     else:
-        return render_template("create-article.html")
+        return render_template("create-article.html", failed_attempt=failed_attempt)
 
 
 @bp.route('/posts/<int:id>/del', methods=['POST'])
@@ -150,10 +154,17 @@ def post_delete(id):
 
     if post.user_id == current_user.id:
         try:
+            # Находим все связанные записи в таблице ArticleGroupAssociation
+            associations = ArticleGroupAssociation.query.filter_by(article_id=post.id).all()
+
+            # Удаляем связанные записи
+            for association in associations:
+                db.session.delete(association)
+
             # Удаление изображений, связанных со статьей
             if post.file:
                 for filename in post.file.split(','):
-                    file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_PICTURES'], filename)
+                    file_path = os.path.join(current_app.config['UPLOAD_FOLDER_POST_FILES'], filename)
                     if os.path.exists(file_path):
                         os.remove(file_path)
 
@@ -191,11 +202,22 @@ def post_update(id):
         new_files = request.files.getlist('file')
         new_filenames = []
         for new_file in new_files:
-            if new_file and allowed_file(new_file.filename):
-                new_filename = secure_filename(new_file.filename)
-                file_path = os.path.join(current_app.root_path, 'static', 'post_files', new_filename)
-                new_file.save(file_path)
-                new_filenames.append(new_filename)
+            if new_file:  # Проверяем, что файл или папка были выбраны
+                if os.path.isdir(new_file):  # Проверяем, является ли элемент папкой
+                    # Обработка загруженной папки
+                    for root, dirs, files in os.walk(new_file):
+                        for file in files:
+                            filename = secure_filename(file.filename)
+                            file_path = os.path.join(current_app.root_path, 'static', 'post_files', filename)
+                            new_file.save(file_path)
+                            new_filenames.append(filename)
+                else:
+                    # Обработка загруженного файла
+                    if allowed_file(new_file.filename):
+                        filename = secure_filename(new_file.filename)
+                        file_path = os.path.join(current_app.root_path, 'static', 'post_files', filename)
+                        new_file.save(file_path)
+                        new_filenames.append(filename)
 
         try:
             article.title = title

@@ -31,20 +31,16 @@ article_group_association = db.Table(
 
 class UserGroup(db.Model):
     __tablename__ = 'user_group'
-
     user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), primary_key=True)
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), primary_key=True)
-
     group = db.relationship('GroupModel', back_populates='user_groups')
     user = db.relationship('User', back_populates="user_groups")
 
 
 class ArticleGroupAssociation(db.Model):
     __tablename__ = 'article_group_association'
-
     article_id = db.Column(db.Integer, db.ForeignKey('article.id'), primary_key=True)
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), primary_key=True)
-
     article = db.relationship('Article', back_populates='group_associations', foreign_keys=[article_id])
     group = db.relationship('GroupModel', back_populates='article_associations')
 
@@ -58,7 +54,6 @@ class GroupModel(db.Model):
     name = db.Column(db.String(100), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
     join_code = db.Column(db.String(20), unique=True, nullable=False)
-
     posts = db.relationship('Article',
                             secondary='article_group_association',
                             backref=db.backref('groups', lazy='dynamic'),
@@ -67,7 +62,6 @@ class GroupModel(db.Model):
     user_groups = db.relationship('UserGroup', back_populates='group')
     author = db.relationship('User', back_populates='authored_groups', foreign_keys=[author_id])
     members = db.relationship('User', secondary='user_group', back_populates='groups')
-
     article_associations = db.relationship('ArticleGroupAssociation', back_populates='group')
 
     def __init__(self, name, author_id):

@@ -96,36 +96,74 @@
 
 <script>
 document.getElementById('file').addEventListener('change', function(event) {
-    var previewContainer = document.getElementById('file-preview-container');
-    previewContainer.innerHTML = ''; // Очищаем превью перед добавлением новых файлов
-
     var files = event.target.files;
+
     for (var i = 0; i < files.length; i++) {
         var file = files[i];
 
-        var div = document.createElement('div');
-        div.className = 'file-preview'; // Добавляем класс для стилизации
-
-        var fileNameContainer = document.createElement('div');
-        fileNameContainer.innerText = file.name; // Устанавливаем название файла в текст элемента
-        div.appendChild(fileNameContainer);
-
-        var deleteButton = document.createElement('button');
-        deleteButton.className = 'btn btn-danger btn-sm delete-btn';
-        deleteButton.innerText = 'Удалить';
-        deleteButton.onclick = function() {
-            div.remove(); // Удаляем превью файла при нажатии на кнопку удаления
-        };
-        div.appendChild(deleteButton);
-
-        previewContainer.appendChild(div);
+        if (file.type === 'application/x-directory') {
+            // Если выбрана папка, отобразить ее как единичное превью
+            handleDirectory(file);
+        } else {
+            // Если выбран файл, отобразить его как обычно
+            var div = createFilePreview(file);
+            previewContainer.appendChild(div);
+        }
     }
 });
+
+function handleDirectory(directory) {
+    // Создаем контейнер для предпросмотра папки
+    var previewContainer = document.getElementById('file-preview-container');
+    previewContainer.innerHTML = '';
+
+    // Создаем превью для выбранной папки
+    var div = createFolderPreview(directory);
+    previewContainer.appendChild(div);
+}
+
+function createFolderPreview(folder) {
+    var div = document.createElement('div');
+    div.className = 'file-preview'; // Добавляем класс для стилизации
+
+    var folderNameContainer = document.createElement('div');
+    folderNameContainer.innerText = folder.name; // Устанавливаем название папки в текст элемента
+    div.appendChild(folderNameContainer);
+
+    var deleteButton = document.createElement('button');
+    deleteButton.className = 'btn btn-danger btn-sm delete-btn';
+    deleteButton.innerText = 'Удалить';
+    deleteButton.onclick = function() {
+        div.remove(); // Удаляем превью папки при нажатии на кнопку удаления
+    };
+    div.appendChild(deleteButton);
+
+    return div;
+}
 
 // Добавляем каждый выбранный файл к FormData
 var files = document.getElementById('file').files;
 for (var i = 0; i < files.length; i++) {
     formData.append('file', files[i]);
+}
+
+function createFilePreview(file) {
+    var div = document.createElement('div');
+    div.className = 'file-preview'; // Добавляем класс для стилизации
+
+    var fileNameContainer = document.createElement('div');
+    fileNameContainer.innerText = file.name; // Устанавливаем название файла в текст элемента
+    div.appendChild(fileNameContainer);
+
+    var deleteButton = document.createElement('button');
+    deleteButton.className = 'btn btn-danger btn-sm delete-btn';
+    deleteButton.innerText = 'Удалить';
+    deleteButton.onclick = function() {
+        div.remove(); // Удаляем превью файла при нажатии на кнопку удаления
+    };
+    div.appendChild(deleteButton);
+
+    return div;
 }
 
 function updateDeletedFiles(image) {
@@ -225,7 +263,6 @@ async function deleteImage(image) {
         alert('Произошла ошибка при удалении файла: ' + error.message);
     }
 }
-
 
 </script>
 
