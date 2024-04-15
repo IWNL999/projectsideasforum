@@ -1,14 +1,43 @@
 {% extends 'base.html' %}
 
 {% block title %}
-    Мои закладки
+    Избранное
 {% endblock %}
 
 {% block content %}
-    <h1>Мои закладки</h1>
-    <ul>
+<div class="container mt-4">
+    <h1>Избранное</h1>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    {% if bookmarks|length > 0 %}
         {% for bookmark in bookmarks %}
-            <li><a href="{{ url_for('main.post_detail', id=bookmark.post_id) }}">{{ bookmark.post.title }}</a></li>
+            <div class="alert alert-info perenos your">
+                <div class="d-flex justify-content-between">
+                    <div class="user-info d-flex align-items-center">
+                        <a class="user-link" href='/profile/{{ bookmark.article.author.id }}'>
+                            <img class="img-avatar" src="{{ bookmark.article.author_avatar_url }}" alt="{{ bookmark.article.author.login }} Avatar">
+                        </a>
+                        <div class="user-details ml-2">
+                            <a class="btn d-flex d-block text-gray-dark user-details" href='/profile/{{ bookmark.article.author.id }}'>@{{ bookmark.article.author.login }}</a>
+                        </div>
+                    </div>
+                </div>
+                <h2>{{ bookmark.article.title }}</h2>
+                <p>{{ bookmark.article.intro }}</p>
+                <p><b>Дата: {{ bookmark.article.date.date() }}</b></p>
+                <a href="{{ url_for('main.post_detail', id=bookmark.article.id) }}" class="btn btn-warning">Детальнее</a>
+            </div>
         {% endfor %}
-    </ul>
+    {% else %}
+        <p>В вашем избранном пока нет статей.</p>
+    {% endif %}
+</div>
 {% endblock %}

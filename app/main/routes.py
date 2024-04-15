@@ -649,5 +649,16 @@ def bookmark_post(article_id):
 @bp.route('/bookmarks')
 @login_required
 def bookmarks():
-    user_bookmarks = current_user.bookmarks.all()
-    return render_template('bookmarks.html', bookmarks=user_bookmarks)
+    user_bookmarks = current_user.bookmarks
+    bookmarked_articles = [bookmark.article for bookmark in user_bookmarks]
+
+    # Добавляем атрибут author_avatar_url для каждой статьи
+    for article in bookmarked_articles:
+        if article.author.file:
+            article.author_avatar_url = url_for('static', filename=f'avatars/{article.author.file}')
+        else:
+            article.author_avatar_url = url_for('static', filename='avatars/default-avatar.png')
+
+    return render_template('bookmarks.html', bookmarks=user_bookmarks, articles=bookmarked_articles)
+
+

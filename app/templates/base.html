@@ -40,7 +40,6 @@
                 <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
                     <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
                         <li><a href="{{ url_for('main.index') }}" class="nav-link px-2 text-white">Главная</a></li>
-                        <li><a href="{{ url_for('main.about') }}" class="nav-link px-2 text-white">О нас</a></li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle text-white" href="#" id="postsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Посты
@@ -48,6 +47,7 @@
                             <ul class="dropdown-menu" aria-labelledby="postsDropdown">
                                 <li><a class="dropdown-item" href="{{ url_for('main.posts') }}">Все посты</a></li>
                                 <li><a class="dropdown-item" href="{{ url_for('main.your_posts') }}">Ваши посты</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.bookmarks') }}">Избранное</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ url_for('main.create_article') }}">Создать пост</a></li>
                             </ul>
