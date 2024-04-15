@@ -22,7 +22,12 @@
         </div>
 
         <div class="col-md perenos">
-            <h1>{{ article.title }} {% if article.hidden %}<span style="font-size: 15px; color: gray;">(пост скрыт)</span>{% endif %}</h1>
+            <h1>
+                {{ article.title }} {% if article.hidden %}<span style="font-size: 15px; color: gray;">(пост скрыт)</span>{% endif %}
+                <button class="btn btn-outline-primary btn-sm" id="bookmarkButton" data-article-id="{{ article.id }}">
+                    <img src="{{ url_for('static', filename='pictures/bookmark.png') }}" alt="Bookmark Icon">
+                </button>
+            </h1>
             <p>{{ article.intro }}</p>
             <p>{{ article.text }}</p>
             {% if article.file %}
@@ -184,6 +189,72 @@ document.querySelectorAll('.close').forEach(function(closeButton) {
         modal.style.display = "none";
     });
 });
+
+// Закрыть модальное окно при клике на кнопку закрытия или вне его
+document.querySelectorAll('.close, .modal').forEach(function(element) {
+    element.addEventListener('click', function() {
+        this.closest('.modal').style.display = "none";
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Восстанавливаем состояние кнопки при загрузке страницы
+    var bookmarkButton = document.getElementById('bookmarkButton');
+    var articleId = bookmarkButton.getAttribute('data-article-id');
+    var isBookmarked = localStorage.getItem('bookmark_' + articleId);
+    if (isBookmarked) {
+        bookmarkButton.classList.add('bookmarked');
+        bookmarkButton.innerHTML = '<img src="{{ url_for('static', filename='pictures/bookmarked.png') }}" alt="Bookmark Icon">';
+    }
+});
+
+document.getElementById('bookmarkButton').addEventListener('click', function() {
+    var articleId = this.getAttribute('data-article-id');
+    var isBookmarked = this.classList.contains('bookmarked');
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    if (isBookmarked) {
+                        alert('Пост удален из избранного');
+                        localStorage.removeItem('bookmark_' + articleId); // Удаляем состояние из localStorage
+                    } else {
+                        alert('Пост добавлен в избранное');
+                        localStorage.setItem('bookmark_' + articleId, true); // Сохраняем состояние в localStorage
+                    }
+                    // Обновляем внешний вид кнопки
+                    updateBookmarkButton(!isBookmarked);
+                } else {
+                    alert(response.message);
+                }
+            } else {
+                alert('Произошла ошибка: ' + xhr.statusText);
+            }
+        }
+    };
+
+    if (isBookmarked) {
+        xhr.open('DELETE', '/post/' + articleId + '/bookmark', true);
+    } else {
+        xhr.open('POST', '/post/' + articleId + '/bookmark', true);
+    }
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send();
+});
+
+function updateBookmarkButton(bookmarked) {
+    var button = document.getElementById('bookmarkButton');
+    if (bookmarked) {
+        button.classList.add('bookmarked');
+        button.innerHTML = '<img src="{{ url_for('static', filename='pictures/bookmarked.png') }}" alt="Bookmark Icon">';
+    } else {
+        button.classList.remove('bookmarked');
+        button.innerHTML = '<img src="{{ url_for('static', filename='pictures/bookmark.png') }}" alt="Bookmark Icon">';
+    }
+}
+
 </script>
 
 {% endblock %}

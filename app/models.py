@@ -96,6 +96,7 @@ class User(UserMixin, db.Model):
     authored_groups = db.relationship('GroupModel', back_populates='author', foreign_keys='GroupModel.author_id')
     moderator_role = db.relationship('Moderator', back_populates='user')
     admin = db.relationship('Admin', back_populates='user')
+    bookmarks = db.relationship('Bookmark', back_populates='user')
 
     liked_users = db.relationship('User', secondary='like',
                                   primaryjoin='User.id == like.c.user_id',
@@ -208,6 +209,7 @@ class Article(db.Model):
     comments = db.relationship("Comment", cascade="all, delete-orphan", backref="article")
     author = db.relationship('User', back_populates='user_articles', foreign_keys=[user_id])
     group_associations = db.relationship('ArticleGroupAssociation', back_populates='article')
+    bookmarks = db.relationship('Bookmark', back_populates='article')
 
     def __init__(self, title, intro, text, user_id, file=None):
         self.title = title
@@ -298,3 +300,19 @@ class BannedUser(db.Model):
     def __init__(self, user_id, reason):
         self.user_id = user_id
         self.reason = reason
+
+
+class Bookmark(db.Model):
+    __tablename__ = 'bookmark'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users1.id'), nullable=False)
+    article_id = db.Column(db.Integer, db.ForeignKey('article.id'), nullable=False)
+
+    user = db.relationship('User', back_populates='bookmarks')
+    article = db.relationship('Article', back_populates='bookmarks')
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'article_id', name='unique_bookmark_constraint'),
+    )
+

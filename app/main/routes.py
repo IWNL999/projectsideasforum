@@ -6,7 +6,8 @@ from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
 from app import db, login_manager
 from app.main.forms import CommentForm, CreateGroupForm
-from app.models import User, Article, Comment, GroupModel, UserGroup, ArticleGroupAssociation, Moderator, Admin
+from app.models import User, Article, Comment, GroupModel, UserGroup, ArticleGroupAssociation, Moderator, Admin, \
+    Bookmark
 from app.main import bp
 
 
@@ -623,3 +624,35 @@ def delete_group(group_id):
     return redirect(url_for('main.groups'))
 
 
+@bp.route('/post/<int:article_id>/bookmark', methods=['POST', 'DELETE'])
+@login_required
+def bookmark_post(article_id):
+    article = Article.query.get_or_404(article_id)
+    if current_user.is_authenticated:
+        bookmark = Bookmark.query.filter_by(user_id=current_user.id, article_id=article_id).first()
+        if request.method == 'POST':
+            if not bookmark:
+                bookmark = Bookmark(user_id=current_user.id, article_id=article_id)
+                db.session.add(bookmark)
+                db.session.commit()
+                return jsonify({'success': True, 'message': 'Пост добавлен в избранное'})
+            else:
+                return jsonify({'success': False, 'message': 'Пост уже добавлен в избранное'})
+        elif request.method == 'DELETE':
+            if bookmark:
+                db.session.delete(bookmark)
+                db.session.commit()
+                return jsonify({'success': True, 'message': 'Пост удален из избранного'})
+            else:
+                return jsonify({'success': False, 'message': 'Пост не был добавлен в избранное'})
+        else:
+            return jsonify({'success': False, 'message': 'Неправильный метод запроса'})
+    else:
+        return jsonify({'success': False, 'message': 'Вы должны войти в систему, чтобы добавлять посты в избранное'})
+
+
+@bp.route('/bookmarks')
+@login_required
+def bookmarks():
+    user_bookmarks = current_user.bookmarks.all()
+    return render_template('bookmarks.html', bookmarks=user_bookmarks)

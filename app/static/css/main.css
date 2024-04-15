@@ -607,3 +607,14 @@ input[type="file"] {
     flex-shrink: 0; /* Запрещаем аватару сжиматься */
     margin-right: 10px; /* Отступ между аватаром и контентом */
 }
+
+#bookmarkButton {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+}
+
+#bookmarkButton img {
+    width: 48px;
+    height: 48px;
+}
