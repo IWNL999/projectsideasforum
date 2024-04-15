@@ -57,7 +57,9 @@ form {
 }
 
 .avatar2 {
-    margin-bottom: 5px;
+    font-size: 16px; /* Размер шрифта для метки */
+    color: #333; /* Цвет текста метки */
+    margin-bottom: 10px; /* Отступ снизу для метки */
 }
 
 .avatar {
@@ -584,9 +586,11 @@ a:hover {
     margin-bottom: 10px;
 }
 
-input[type="file"] {
-    display: none; /* Скрыть стандартный вид input для файлов */
+/* Скрыть стандартный вид input для файлов только при обновлении поста */
+.choose-img input[type="file"] {
+    display: none;
 }
+
 
 .input-field {
     transition: border-color 0.2s ease-in-out;
@@ -618,3 +622,13 @@ input[type="file"] {
     width: 48px;
     height: 48px;
 }
+
+/* Стили для формы загрузки аватара */
+#avatarForm {
+    width: 500px;
+}
+
+#avatar {
+    margin-bottom: 20px;
+}
+

@@ -32,6 +32,7 @@ def inject_user():
 
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+DEFAULT_AVATAR_PATH = 'static/avatars/default-avatar.png'
 
 
 def allowed_file(filename):
@@ -41,6 +42,11 @@ def allowed_file(filename):
 def check_file_type(filename):
     image_extensions = ('.png', '.jpg', '.jpeg', '.gif')
     return filename.lower().endswith(image_extensions)
+
+
+def is_image_file(filename):
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 
 @bp.route('/')
@@ -203,22 +209,11 @@ def post_update(id):
         new_files = request.files.getlist('file')
         new_filenames = []
         for new_file in new_files:
-            if new_file:  # Проверяем, что файл или папка были выбраны
-                if os.path.isdir(new_file):  # Проверяем, является ли элемент папкой
-                    # Обработка загруженной папки
-                    for root, dirs, files in os.walk(new_file):
-                        for file in files:
-                            filename = secure_filename(file.filename)
-                            file_path = os.path.join(current_app.root_path, 'static', 'post_files', filename)
-                            new_file.save(file_path)
-                            new_filenames.append(filename)
-                else:
-                    # Обработка загруженного файла
-                    if allowed_file(new_file.filename):
-                        filename = secure_filename(new_file.filename)
-                        file_path = os.path.join(current_app.root_path, 'static', 'post_files', filename)
-                        new_file.save(file_path)
-                        new_filenames.append(filename)
+            if new_file and allowed_file(new_file.filename):
+                new_filename = secure_filename(new_file.filename)
+                file_path = os.path.join(current_app.root_path, 'static', 'post_files', new_filename)
+                new_file.save(file_path)
+                new_filenames.append(new_filename)
 
         try:
             article.title = title
@@ -339,9 +334,9 @@ def registration():
         password1 = request.form['password']
         email = request.form['email']
 
-        if 'file' in request.files:
+        if 'file' in request.files and is_image_file(request.files['file'].filename):
             file = request.files['file']
-            if file and allowed_file(file.filename):
+            if file and is_image_file(file.filename):
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(current_app.config['UPLOAD_FOLDER_AVATARS'], filename)
                 file.save(file_path)
@@ -375,13 +370,13 @@ def signup():
     login1 = request.form['login']
     password1 = request.form['password']
     email = request.form['email']
-    file_path = None
+    filename = None  # Предопределение переменной filename
+
     if 'file' in request.files:
         file = request.files['file']
-        if file and allowed_file(file.filename):
+        if file and is_image_file(file.filename):
             filename = secure_filename(file.filename)
-            file_path = os.path.join(current_app.config['UPLOAD_FOLDER_AVATARS'], filename)
-            file.save(file_path)
+            file.save(os.path.join(current_app.config['UPLOAD_FOLDER_AVATARS'], filename))
     else:
         # Обработка случая, когда ключ 'file' отсутствует в запросе
         flash("File not provided in the request.")

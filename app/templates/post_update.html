@@ -63,7 +63,7 @@
         <!-- Поле для загрузки изображения -->
         <label for="file" class="btn btn-primary choose-img join-code-input">
             Выберите новые файлы
-            <input type="file" name="file" id="file" multiple webkitdirectory>
+            <input type="file" name="file" id="file" style="display:none" accept="*/*" multiple="true">
         </label>
 
         <div id="existing-files-preview" class="d-flex flex-column">
@@ -87,7 +87,7 @@
             {% endif %}
         </div>
 
-        <div id="file-preview-container" class="mt-3"></div> <!-- Здесь будет отображаться предпросмотр новых изображений -->
+        <div id="file-preview-container-update" class="mt-3"></div> <!-- Здесь будет отображаться предпросмотр новых изображений -->
 
         <br>
         <button type="button" class="btn btn-success btn-update" onclick="updatePost(event)">Обновить</button>
@@ -96,93 +96,48 @@
 
 <script>
 document.getElementById('file').addEventListener('change', function(event) {
-    var files = event.target.files;
+    var previewContainer = document.getElementById('file-preview-container-update');
+    previewContainer.innerHTML = ''; // Очищаем превью перед добавлением новых файлов
 
+    var files = event.target.files;
     for (var i = 0; i < files.length; i++) {
         var file = files[i];
 
-        if (file.type === 'application/x-directory') {
-            // Если выбрана папка, отобразить ее как единичное превью
-            handleDirectory(file);
-        } else {
-            // Если выбран файл, отобразить его как обычно
-            var div = createFilePreview(file);
-            previewContainer.appendChild(div);
-        }
+        var div = document.createElement('div');
+        div.className = 'file-preview'; // Добавляем класс для стилизации
+
+        var fileNameContainer = document.createElement('div');
+        fileNameContainer.innerText = file.name; // Устанавливаем название файла в текст элемента
+        div.appendChild(fileNameContainer);
+
+        var deleteButton = document.createElement('button');
+        deleteButton.className = 'btn btn-danger btn-sm delete-btn';
+        deleteButton.innerText = 'Удалить';
+        deleteButton.onclick = function() {
+            div.remove(); // Удаляем превью файла при нажатии на кнопку удаления
+        };
+        div.appendChild(deleteButton);
+
+        previewContainer.appendChild(div);
     }
 });
 
-function handleDirectory(directory) {
-    // Создаем контейнер для предпросмотра папки
-    var previewContainer = document.getElementById('file-preview-container');
-    previewContainer.innerHTML = '';
-
-    // Создаем превью для выбранной папки
-    var div = createFolderPreview(directory);
-    previewContainer.appendChild(div);
-}
-
-function createFolderPreview(folder) {
-    var div = document.createElement('div');
-    div.className = 'file-preview'; // Добавляем класс для стилизации
-
-    var folderNameContainer = document.createElement('div');
-    folderNameContainer.innerText = folder.name; // Устанавливаем название папки в текст элемента
-    div.appendChild(folderNameContainer);
-
-    var deleteButton = document.createElement('button');
-    deleteButton.className = 'btn btn-danger btn-sm delete-btn';
-    deleteButton.innerText = 'Удалить';
-    deleteButton.onclick = function() {
-        div.remove(); // Удаляем превью папки при нажатии на кнопку удаления
-    };
-    div.appendChild(deleteButton);
-
-    return div;
-}
-
 // Добавляем каждый выбранный файл к FormData
-var files = document.getElementById('file').files;
-for (var i = 0; i < files.length; i++) {
-    formData.append('file', files[i]);
-}
+function updateFormWithFiles() {
+    var files = document.getElementById('file').files;
+    var formData = new FormData();
 
-function createFilePreview(file) {
-    var div = document.createElement('div');
-    div.className = 'file-preview'; // Добавляем класс для стилизации
-
-    var fileNameContainer = document.createElement('div');
-    fileNameContainer.innerText = file.name; // Устанавливаем название файла в текст элемента
-    div.appendChild(fileNameContainer);
-
-    var deleteButton = document.createElement('button');
-    deleteButton.className = 'btn btn-danger btn-sm delete-btn';
-    deleteButton.innerText = 'Удалить';
-    deleteButton.onclick = function() {
-        div.remove(); // Удаляем превью файла при нажатии на кнопку удаления
-    };
-    div.appendChild(deleteButton);
-
-    return div;
-}
-
-function updateDeletedFiles(image) {
-    var deletedFilesInput = document.getElementById('deleted-files');
-    var deletedFiles = deletedFilesInput.value;
-    if (deletedFiles) {
-        deletedFiles += ',' + image;
-    } else {
-        deletedFiles = image;
+    for (var i = 0; i < files.length; i++) {
+        formData.append('file', files[i]);
     }
-    deletedFilesInput.value = deletedFiles;
+
+    return formData;
 }
 
 function updatePost(event) {
     event.preventDefault(); // Предотвращаем стандартное действие формы
 
     let form = document.getElementById('update-form');
-    console.log('Form data:', new FormData(form)); // Добавим вывод содержимого формы в консоль
-
     let formData = new FormData(form);
 
     // Очистим скрытое поле groups
@@ -200,10 +155,7 @@ function updatePost(event) {
     formData.delete('file');
 
     // Добавляем каждый файл с общим ключом 'file'
-    var files = document.getElementById('file').files;
-    for (var i = 0; i < files.length; i++) {
-        formData.append('file', files[i]);
-    }
+    formData = updateFormWithFiles();
 
     // Удаляем из FormData файлы, которые нужно удалить
     var imagesToDelete = document.querySelectorAll('.image-container img');
@@ -263,7 +215,6 @@ async function deleteImage(image) {
         alert('Произошла ошибка при удалении файла: ' + error.message);
     }
 }
-
 </script>
 
 {% endblock %}
