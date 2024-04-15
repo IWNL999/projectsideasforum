@@ -29,36 +29,21 @@
             <label>Выберите место публикации:</label><br>
             <input type="checkbox" id="all" name="groups" value="all">
             <label for="all">Все</label><br>
-            {% set displayed_groups = {} %}
-            {% for group in groups %}
-                {% if group.id not in displayed_groups %}
-                    <input type="checkbox" id="group_{{ group.id }}" name="groups" value="{{ group.id }}"
-                           {% if group.id in group_ids %}checked{% endif %}>
-                    <label for="group_{{ group.id }}">{{ group.name }}</label><br>
-                    {% set _ = displayed_groups.update({group.id: True}) %}
-                {% endif %}
+            <!-- Добавим только группы, в которых пользователь является автором или участником -->
+            {% for group in current_user.authored_groups %}
+                <input type="checkbox" id="author_group_{{ group.id }}" name="groups" value="{{ group.id }}"
+                       {% if group.id in group_ids %}checked{% endif %}>
+                <label for="author_group_{{ group.id }}">{{ group.name }}</label><br>
             {% endfor %}
-            <!-- Добавим также группы, автором которых является текущий пользователь -->
-            {% for author_group in current_user.authored_groups %}
-                {% if author_group.id not in displayed_groups %}
-                    <input type="checkbox" id="author_group_{{ author_group.id }}" name="groups" value="{{ author_group.id }}"
-                           {% if author_group.id in group_ids %}checked{% endif %}>
-                    <label for="author_group_{{ author_group.id }}">{{ author_group.name }}</label><br>
-                    {% set _ = displayed_groups.update({author_group.id: True}) %}
-                {% endif %}
-            {% endfor %}
-            <!-- Добавим группы, в которых пользователь состоит -->
             {% for group in current_user.groups %}
                 {% if group not in current_user.authored_groups %}
-                    {% if group.id not in displayed_groups %}
-                        <input type="checkbox" id="user_group_{{ group.id }}" name="groups" value="{{ group.id }}"
-                               {% if group.id in group_ids %}checked{% endif %}>
-                        <label for="user_group_{{ group.id }}">{{ group.name }}</label><br>
-                        {% set _ = displayed_groups.update({group.id: True}) %}
-                    {% endif %}
+                    <input type="checkbox" id="user_group_{{ group.id }}" name="groups" value="{{ group.id }}"
+                           {% if group.id in group_ids %}checked{% endif %}>
+                    <label for="user_group_{{ group.id }}">{{ group.name }}</label><br>
                 {% endif %}
             {% endfor %}
         </div>
+
         
         <!-- Поле для загрузки изображения -->
         <label for="file" class="btn btn-primary choose-img join-code-input">
@@ -151,11 +136,15 @@ function updatePost(event) {
     });
     formData.set('groups', selectedGroupIds.join(',')); // Всегда устанавливаем список значений
 
-    // Очищаем все файлы, загруженные в FormData
-    formData.delete('file');
-
     // Добавляем каждый файл с общим ключом 'file'
-    formData = updateFormWithFiles();
+    // Проверим, добавлялись ли файлы уже с помощью updateFormWithFiles()
+    // Если да, то не добавляем их снова
+    if (formData.get('file').size === 0) {
+        var files = document.getElementById('file').files;
+        for (var i = 0; i < files.length; i++) {
+            formData.append('file', files[i]);
+        }
+    }
 
     // Удаляем из FormData файлы, которые нужно удалить
     var imagesToDelete = document.querySelectorAll('.image-container img');
@@ -182,6 +171,7 @@ function updatePost(event) {
     });
 }
 
+
 function confirmAndDelete(image) {
     if (confirm('Вы уверены, что хотите удалить этот файл?')) {
         deleteImage(image);
@@ -203,18 +193,18 @@ async function deleteImage(image) {
         }
         alert(data.message);
 
-        // Перебираем все элементы с классом .file-preview и удаляем тот, который содержит удаляемый файл
-        var filePreviews = document.querySelectorAll('.file-preview');
-        filePreviews.forEach(function(filePreview) {
-            if (filePreview.dataset.fileName === image) {
-                filePreview.remove();
-            }
-        });
+        // Удаляем только превью файла, который был удален
+        var filePreviewToDelete = document.querySelector(`.file-preview[data-file-name="${image}"]`);
+        if (filePreviewToDelete) {
+            filePreviewToDelete.remove();
+        }
     } catch (error) {
         console.error('Ошибка:', error);
         alert('Произошла ошибка при удалении файла: ' + error.message);
     }
 }
+
+
 </script>
 
 {% endblock %}

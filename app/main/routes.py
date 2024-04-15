@@ -202,8 +202,10 @@ def post_update(id):
         title = request.form.get('title', article.title)
         intro = request.form.get('intro', article.intro)
         text = request.form.get('text', article.text)
-        group_ids_str = request.form.get('groups', '')
-        group_ids = [int(group_id) for group_id in group_ids_str.split(',') if group_id.strip()]
+
+        # Получаем список выбранных групп для отображения поста
+        group_ids_str = request.form.getlist('groups')  # Вместо request.form.get используем request.form.getlist
+        group_ids = [int(group_id) for group_id in group_ids_str]
 
         # Обработка загружаемых файлов
         new_files = request.files.getlist('file')
@@ -264,7 +266,7 @@ def delete_post_image(id, filename):
 
         # Проверяем, является ли пользователь автором статьи
         if post.author != current_user:
-            return jsonify({'message': 'Вы не можете удалять изображения этой статьи'}), 403
+            return jsonify({'message': 'Вы не можете удалять файлы этой статьи'}), 403
 
         # Проверяем, существует ли изображение в списке файлов статьи
         if filename in post.file.split(','):
@@ -282,11 +284,11 @@ def delete_post_image(id, filename):
                 # Сохраняем изменения в базе данных
                 db.session.commit()
 
-                return jsonify({'message': 'Изображение успешно удалено'}), 200
+                return jsonify({'message': 'Файл успешно удалён!'}), 200
             except Exception as e:
-                return jsonify({'message': f'При удалении изображения произошла ошибка: {str(e)}'}), 500
+                return jsonify({'message': f'При удалении файла произошла ошибка: {str(e)}'}), 500
         else:
-            return jsonify({'message': 'Изображение не найдено в статье'}), 404
+            return jsonify({'message': 'файл не найден в статье'}), 404
 
 
 @bp.route('/your-posts', methods=['GET', 'POST'])
@@ -492,7 +494,7 @@ def create_group():
             existing_group = GroupModel.query.filter_by(name=group_name).first()
             if existing_group:
                 flash('Группа с таким названием уже существует.', 'danger')
-                return redirect(url_for('main.create_group'))  # Перенаправляем на другую страницу, например, на домашнюю
+                return redirect(url_for('main.create_group'))
 
             # Создаем группу
             new_group = GroupModel(name=group_name, author_id=current_user.id)
@@ -517,7 +519,6 @@ def create_group():
 
         except Exception as e:
             db.session.rollback()
-            flash('Ошибка при создании группы', 'danger')
             print(f"Error: {e}")
 
     return render_template('create-group.html', create_group_form=create_group_form)
