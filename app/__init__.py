@@ -13,10 +13,8 @@ login_manager.login_view = 'main.login'
 
 def create_app():
     app = Flask(__name__)
-    app.config['SESSION_TYPE'] = 'sqlalchemy'
-    app.config['SESSION_SQLALCHEMY_TABLE'] = 'sessions'
-    app.config['SESSION_COOKIE_NAME'] = 'projectsideascookie'
 
+    # Конфигурация базы данных SQLAlchemy
     app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:logachevmaksim07@localhost:5433/users_1'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = 'dfhdhfwqhjggx3463n32462h'
@@ -32,14 +30,14 @@ def create_app():
     # Установка максимального размера загружаемого файла
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1920 * 1080
 
+    # Инициализация базы данных
     db.init_app(app)
-    bcrypt.init_app(app)
-    login_manager.init_app(app)
 
-    with app.app_context():
-        app.config['SESSION_SQLALCHEMY'] = db.engine
-        db.create_all()
-
+    # Инициализация сессий Flask-Session
+    app.config['SESSION_TYPE'] = 'sqlalchemy'
+    app.config['SESSION_SQLALCHEMY'] = db
+    app.config['SESSION_SQLALCHEMY_TABLE'] = 'sessions'
+    app.config['SESSION_COOKIE_NAME'] = 'projectsideascookie'
     Session(app)
 
     from app.main import bp as main_bp
