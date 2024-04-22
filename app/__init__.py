@@ -14,7 +14,6 @@ login_manager.login_view = 'main.login'
 def create_app():
     app = Flask(__name__)
     app.config['SESSION_TYPE'] = 'sqlalchemy'
-    app.config['SESSION_SQLALCHEMY'] = db.engine  # Используем db.engine для получения экземпляра SQLAlchemy
     app.config['SESSION_SQLALCHEMY_TABLE'] = 'sessions'
     app.config['SESSION_COOKIE_NAME'] = 'projectsideascookie'
 
@@ -38,6 +37,7 @@ def create_app():
     login_manager.init_app(app)
 
     with app.app_context():
+        app.config['SESSION_SQLALCHEMY'] = db.engine
         db.create_all()
 
     Session(app)
