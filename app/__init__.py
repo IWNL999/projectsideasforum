@@ -1,8 +1,8 @@
 from flask_bcrypt import Bcrypt
+from flask_session import Session
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from sqlalchemy.exc import OperationalError
 import os
 
 db = SQLAlchemy()
@@ -13,7 +13,12 @@ login_manager.login_view = 'main.login'
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:logachevmaksim07@localhost/users_1'
+    app.config['SESSION_TYPE'] = 'sqlalchemy'
+    app.config['SESSION_SQLALCHEMY'] = db.engine  # Используем db.engine для получения экземпляра SQLAlchemy
+    app.config['SESSION_SQLALCHEMY_TABLE'] = 'sessions'
+    app.config['SESSION_COOKIE_NAME'] = 'projectsideascookie'
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:logachevmaksim07@localhost:5433/users_1'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = 'dfhdhfwqhjggx3463n32462h'
 
@@ -32,6 +37,11 @@ def create_app():
     bcrypt.init_app(app)
     login_manager.init_app(app)
 
+    with app.app_context():
+        db.create_all()
+
+    Session(app)
+
     from app.main import bp as main_bp
     from app.admin import admin_bp
 
@@ -45,10 +55,3 @@ def create_app():
 
 
 app = create_app()
-
-
-def create_tables():
-    try:
-        db.create_all()
-    except OperationalError as e:
-        print(f"Error creating tables: {e}")

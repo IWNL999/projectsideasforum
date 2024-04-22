@@ -1,6 +1,7 @@
 import os
 import secrets
 from sqlalchemy import UniqueConstraint, event
+from sqlalchemy.dialects.postgresql import JSON
 from flask import current_app, url_for
 from app import db, bcrypt
 from werkzeug.utils import secure_filename
@@ -175,7 +176,7 @@ class User(UserMixin, db.Model):
         return self.liked_users.filter_by(id=user_id).first() is not None
 
     def get_id(self):
-        return f"{self.id}{str(self.group_id) if self.group_id is not None else ''}"
+        return str(self.id)
 
 
 class Comment(db.Model):
@@ -316,3 +317,11 @@ class Bookmark(db.Model):
         db.UniqueConstraint('user_id', 'article_id', name='unique_bookmark_constraint'),
     )
 
+
+class Session(db.Model):
+    __tablename__ = 'sessions'
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(255), nullable=False, unique=True)
+    data = db.Column(JSON, nullable=False)
+    expiry = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)

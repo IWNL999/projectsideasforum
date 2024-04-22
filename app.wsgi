@@ -1,8 +1,8 @@
 #!/usr/bin/python3.10
 import sys
-sys.path.insert(0, '/var/www/projectsideasforum')  
+sys.path.insert(0, '/var/www/projectsideasforum')
 
-from app.__init__ import app as application
+from app import app as application  # Импортируйте экземпляр вашего Flask приложения
 
 application.secret_key = 'dfhdhfwqhjggx3463n32462h'
 

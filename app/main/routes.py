@@ -1,6 +1,6 @@
 import os
 import traceback
-from flask import render_template, url_for, request, redirect, flash, current_app, g, abort, jsonify
+from flask import render_template, url_for, request, redirect, flash, current_app, g, abort, jsonify, session
 from sqlalchemy.exc import IntegrityError
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
@@ -22,13 +22,9 @@ def load_user(user_id):
 
 @bp.before_request
 def inject_user():
-    if current_user.is_authenticated:
-        # Передача group_id в load_user через аргументы запроса (query parameters)
-        g.current_user = current_user
-        g.current_user_avatar = current_user.avatar_url()
-    else:
-        g.current_user = None
-        g.current_user_avatar = url_for('static', filename='avatars/default-avatar.png')
+    g.current_user = current_user if current_user.is_authenticated else None
+    g.current_user_avatar = current_user.avatar_url() if current_user.is_authenticated else url_for('static',
+                                                                                                    filename='avatars/default-avatar.png')
 
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
