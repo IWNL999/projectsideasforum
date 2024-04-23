@@ -28,7 +28,7 @@ def inject_user():
             g.current_user = current_user
             g.current_user_avatar = current_user.avatar_url()
         else:
-            # Иначе проверяем, есть ли данные пользователя в сессии Flask
+            # Проверяем, есть ли ID пользователя в сессии Flask
             user_id = session.get('user_id')
             if user_id:
                 # Если есть, загружаем пользователя из базы данных
@@ -323,14 +323,14 @@ def login():
         user = User.query.filter((User.login == login_or_email) | (User.email == login_or_email)).first()
         if user and user.check_password(password):
             login_user(user)
+            session['user_id'] = user.id  # Установка user_id в сессии при успешном входе пользователя
             g.current_user = user
-            # Добавим отладочное сообщение для проверки
-            print(f"User {user.login} successfully logged in.")
             flash('Вы успешно вошли в аккаунт!', 'success')
             return redirect(url_for('main.user_profile_by_id', user_id=user.id))
         else:
             flash('Логин или пароль не корректны', 'error')
     return render_template("login.html")
+
 
 
 @bp.route("/logout")
