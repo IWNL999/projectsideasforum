@@ -338,7 +338,7 @@ def login():
 @login_required
 def logout():
     # Добавим отладочное сообщение для проверки
-    if hasattr(g, 'current_user') and g.current_user:
+    if hasattr(g, 'current_user') and hasattr(g.current_user, 'login'):
         print(f"User {g.current_user.login} successfully logged out.")
     else:
         print("User successfully logged out.")
