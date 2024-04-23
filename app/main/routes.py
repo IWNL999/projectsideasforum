@@ -23,7 +23,6 @@ def load_user(user_id):
 @bp.before_request
 def inject_user():
     with current_app.app_context():
-        print(hasattr(current_app, 'login_manager'))  # Выведем True или False
         if current_user.is_authenticated:
             # Если пользователь аутентифицирован, используем его данные
             g.current_user = current_user
@@ -324,6 +323,7 @@ def login():
         user = User.query.filter((User.login == login_or_email) | (User.email == login_or_email)).first()
         if user and user.check_password(password):
             login_user(user)
+            print(f"User {user.username} successfully logged in.")  # Отладочное сообщение
             flash('Вы успешно вошли в аккаунт!', 'success')
             return redirect(url_for('main.user_profile_by_id', user_id=user.id))
         else:
