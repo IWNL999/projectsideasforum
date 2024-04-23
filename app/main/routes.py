@@ -323,6 +323,7 @@ def login():
         user = User.query.filter((User.login == login_or_email) | (User.email == login_or_email)).first()
         if user and user.check_password(password):
             login_user(user)
+            g.current_user = user
             # Добавим отладочное сообщение для проверки
             print(f"User {user.login} successfully logged in.")
             flash('Вы успешно вошли в аккаунт!', 'success')
