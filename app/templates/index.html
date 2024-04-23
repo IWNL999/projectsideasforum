@@ -8,43 +8,43 @@
 
 {% block content %}
 
-    <main>
-        <div class="last-posts wrapper">
+<main>
+    <div class="last-posts wrapper">
 
-            {% with messages = get_flashed_messages() %}
-              {% if messages %}
-                <ul class="flashes">
-                  {% for message in messages %}
-                    <li>{{ message }}</li>
-                  {% endfor %}
-                </ul>
-              {% endif %}
-            {% endwith %}
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul class="flashes">
+              {% for message in messages %}
+                <li>{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+        <p>Значение g.current_user: {{ g.current_user }}</p>
+        <div class="container my-3 p-3 bg-body rounded shadow-sm">
+            <h6 class="border-bottom pb-2 mb-0">Последние посты</h6>
 
-            <div class="container my-3 p-3 bg-body rounded shadow-sm">
-                <h6 class="border-bottom pb-2 mb-0">Последние посты</h6>
+            {% for post in latest_posts %}
+                <div class="d-flex text-body-secondary pt-3">
+                    {% if post.author.file %}
+                        <a class="user-link" href='/profile/{{ post.author.id }}'>
+                            <img class="img-avatar" src="{{ post.author_avatar_url }}" alt="{{ post.author.login }} Avatar">
+                        </a>
+                    {% else %}
+                        <a class="user-link" href='/profile/{{ post.author.id }}'>
+                            <img class="img-avatar" src="{{ post.author_avatar_url }}" alt="Default Avatar">
+                        </a>
+                    {% endif %}
 
-                {% for post in latest_posts %}
-                    <div class="d-flex text-body-secondary pt-3">
-                        {% if post.author.file %}
-                            <a class="user-link" href='/profile/{{ post.author.id }}'>
-                                <img class="img-avatar" src="{{ post.author_avatar_url }}" alt="{{ post.author.login }} Avatar">
-                            </a>
-                        {% else %}
-                            <a class="user-link" href='/profile/{{ post.author.id }}'>
-                                <img class="img-avatar" src="{{ post.author_avatar_url }}" alt="Default Avatar">
-                            </a>
-                        {% endif %}
+                    <p class="textpr pb-3 mb-0 small lh-sm border-bottom ">
+                        <a class="btn d-flex d-block text-gray-dark" href='/profile/{{ post.author.id }}'>@{{ post.author.login }}</a>
+                        {{ post.title }}
+                        <a href='/posts/{{ post.id }}' class="text-details" data-content="Подробнее">Подробнее</a>
+                    </p>
+                </div>
+            {% endfor %}
 
-                        <p class="textpr pb-3 mb-0 small lh-sm border-bottom ">
-                            <a class="btn d-flex d-block text-gray-dark" href='/profile/{{ post.author.id }}'>@{{ post.author.login }}</a>
-                            {{ post.title }}
-                            <a href='/posts/{{ post.id }}' class="text-details" data-content="Подробнее">Подробнее</a>
-                        </p>
-                    </div>
-                {% endfor %}
-
-            </div>
         </div>
-    </main>
+    </div>
+</main>
 {% endblock %}
