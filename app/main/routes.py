@@ -323,14 +323,12 @@ def login():
         user = User.query.filter((User.login == login_or_email) | (User.email == login_or_email)).first()
         if user and user.check_password(password):
             login_user(user)
-            session['user_id'] = user.id  # Установка user_id в сессии при успешном входе пользователя
-            g.current_user = user
+            session['user_id'] = user.id
             flash('Вы успешно вошли в аккаунт!', 'success')
             return redirect(url_for('main.user_profile_by_id', user_id=user.id))
         else:
             flash('Логин или пароль не корректны', 'error')
     return render_template("login.html")
-
 
 
 @bp.route("/logout")
