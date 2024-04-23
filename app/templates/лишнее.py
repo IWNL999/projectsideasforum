@@ -275,3 +275,42 @@ document.getElementById('file').addEventListener('change', function(e) {
 });
 
 </script>
+
+
+<div class="text-end">
+    {% if g.current_user and g.current_user.is_admin %}
+        <a href="{{ url_for('main.admin.admin_panel') }}" class="btn btn-outline-light me-2">Админ Панель</a>
+    {% endif %}
+        <!-- Добавляем проверку, что пользователь аутентифицирован -->
+    {% if g.current_user %}
+        <!-- Если пользователь аутентифицирован, показываем другие элементы (например, ссылку на профиль) -->
+        <a href="{{ url_for('main.user_profile_by_id', user_id=current_user.id) }}" class="btn btn-outline-light me-2">
+            {{ current_user.login }}
+        </a>
+        <img class="img-avatar" src="{{ g.current_user_avatar }}" alt="User Avatar">
+        <a href="{{ url_for('main.logout') }}" class="btn btn-outline-light">Выйти</a>
+    {% else %}
+        <!-- Если пользователь не аутентифицирован, показываем кнопки Войти и Зарегистрироваться -->
+        <a href="{{ url_for('main.login') }}" class="btn btn-outline-light me-2">Войти</a>
+        <a href="{{ url_for('main.registration') }}" class="btn btn-warning">Зарегистрироваться</a>
+    {% endif %}
+</div>
+
+...
+<div class="text-end">
+    {% if g.current_user %}
+        <!-- Если пользователь аутентифицирован, показываем другие элементы (например, ссылку на профиль) -->
+        <p>Значение g.current_user: {{ g.current_user }}</p>
+        <p>Значение current_user: {{ current_user }}</p>
+        <a href="{{ url_for('main.user_profile_by_id', user_id=current_user.id) }}" class="btn btn-outline-light me-2">
+            {{ current_user.login }}
+        </a>
+        <img class="img-avatar" src="{{ g.current_user_avatar }}" alt="User Avatar">
+        <a href="{{ url_for('main.logout') }}" class="btn btn-outline-light">Выйти</a>
+    {% else %}
+        <!-- Если пользователь не аутентифицирован, показываем кнопки Войти и Зарегистрироваться -->
+        <a href="{{ url_for('main.login') }}" class="btn btn-outline-light me-2">Войти</a>
+        <a href="{{ url_for('main.registration') }}" class="btn btn-warning">Зарегистрироваться</a>
+    {% endif %}
+</div>
+...

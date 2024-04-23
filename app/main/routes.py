@@ -323,7 +323,8 @@ def login():
         user = User.query.filter((User.login == login_or_email) | (User.email == login_or_email)).first()
         if user and user.check_password(password):
             login_user(user)
-            print(f"User {user.username} successfully logged in.")  # Отладочное сообщение
+            # Добавим отладочное сообщение для проверки
+            print(f"User {user.login} successfully logged in.")
             flash('Вы успешно вошли в аккаунт!', 'success')
             return redirect(url_for('main.user_profile_by_id', user_id=user.id))
         else:
@@ -334,6 +335,8 @@ def login():
 @bp.route("/logout")
 @login_required
 def logout():
+    # Добавим отладочное сообщение для проверки
+    print(f"User {g.current_user.login} successfully logged out.")
     logout_user()
     flash('Вы вышли из своего аккаунта', 'info')
     return redirect(url_for('main.login'))
