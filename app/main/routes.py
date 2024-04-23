@@ -338,8 +338,13 @@ def login():
 @login_required
 def logout():
     # Добавим отладочное сообщение для проверки
-    print(f"User {g.current_user.login} successfully logged out.")
+    if hasattr(g, 'current_user') and hasattr(g.current_user, 'login'):
+        print(f"User {g.current_user.login} successfully logged out.")
+    else:
+        print("User successfully logged out.")
+
     logout_user()
+    session.pop('user_id', None)  # Удаляем ID пользователя из сессии Flask
     flash('Вы вышли из своего аккаунта', 'info')
     return redirect(url_for('main.login'))
 
