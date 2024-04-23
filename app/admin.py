@@ -1,5 +1,8 @@
-from flask import Blueprint, render_template, redirect, url_for, jsonify, request
+# app/admin.py
+
+from flask import Blueprint, render_template, redirect, url_for, jsonify, current_app
 from flask_login import current_user
+
 from app import db
 from app.models import User, Moderator, Admin, BannedUser
 

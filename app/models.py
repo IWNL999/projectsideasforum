@@ -318,7 +318,7 @@ class Bookmark(db.Model):
     )
 
 
-class Session(db.Model):
+class UserSession(db.Model):
     __tablename__ = 'sessions'
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(255), nullable=False, unique=True)

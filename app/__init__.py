@@ -1,23 +1,28 @@
+# app/__init__.py
+
 from flask_bcrypt import Bcrypt
-from flask_session import Session
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from app.admin import admin_bp
 import os
 
 db = SQLAlchemy()
-bcrypt = Bcrypt()
 login_manager = LoginManager()
+bcrypt = Bcrypt()
 login_manager.login_view = 'main.login'
 
 
 def create_app():
     app = Flask(__name__)
 
+    from app.models import UserSession
+
     # Конфигурация базы данных SQLAlchemy
     app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:logachevmaksim07@localhost:5433/users_1'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = 'dfhdhfwqhjggx3463n32462h'
+    app.config['SESSION_TYPE'] = 'sqlalchemy'
 
     # Установка пути к папке загрузки файлов для аватаров пользователей
     UPLOAD_FOLDER_AVATARS = os.path.join('app', 'static', 'avatars')
@@ -33,23 +38,16 @@ def create_app():
     # Инициализация базы данных
     db.init_app(app)
 
+    # Инициализация bcrypt
+    bcrypt.init_app(app)
+
     # Инициализация сессий Flask-Session
-    app.config['SESSION_TYPE'] = 'sqlalchemy'
+
     app.config['SESSION_SQLALCHEMY'] = db
     app.config['SESSION_SQLALCHEMY_TABLE'] = 'sessions'
     app.config['SESSION_COOKIE_NAME'] = 'projectsideascookie'
-    Session(app)
+    UserSession()
 
-    from app.main import bp as main_bp
-    from app.admin import admin_bp
-
-    # Регистрируем Blueprint для основной части приложения
-    app.register_blueprint(main_bp)
-
-    # Регистрируем Blueprint для административной панели
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
     return app
-
-
-app = create_app()
