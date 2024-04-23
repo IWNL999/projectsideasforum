@@ -4,8 +4,9 @@ from flask_bcrypt import Bcrypt
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from app.admin import admin_bp
+from sqlalchemy.exc import OperationalError
 import os
+
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -40,14 +41,27 @@ def create_app():
 
     # Инициализация bcrypt
     bcrypt.init_app(app)
-
-    # Инициализация сессий Flask-Session
+    login_manager.init_app(app)
 
     app.config['SESSION_SQLALCHEMY'] = db
     app.config['SESSION_SQLALCHEMY_TABLE'] = 'sessions'
     app.config['SESSION_COOKIE_NAME'] = 'projectsideascookie'
     UserSession()
 
+    from app.main import bp as main_bp
+    from app.admin import admin_bp
+    app.register_blueprint(main_bp)
+    # Регистрируем Blueprint для административной панели
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
     return app
+
+
+app = create_app()
+
+
+def create_tables():
+    try:
+        db.create_all()
+    except OperationalError as e:
+        print(f"Error creating tables: {e}")

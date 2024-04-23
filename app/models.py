@@ -3,11 +3,11 @@ import secrets
 from sqlalchemy import UniqueConstraint, event
 from sqlalchemy.dialects.postgresql import JSON
 from flask import current_app, url_for
-from app import db, bcrypt
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from flask_login import UserMixin
 from flask_bcrypt import check_password_hash
+from app import bcrypt, db
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 

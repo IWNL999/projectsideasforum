@@ -22,9 +22,23 @@ def load_user(user_id):
 
 @bp.before_request
 def inject_user():
-    g.current_user = current_user if current_user.is_authenticated else None
-    g.current_user_avatar = current_user.avatar_url() if current_user.is_authenticated else url_for('static',
-                                                                                                    filename='avatars/default-avatar.png')
+    with current_app.app_context():
+        print(hasattr(current_app, 'login_manager'))  # Выведем True или False
+        if current_user.is_authenticated:
+            # Если пользователь аутентифицирован, используем его данные
+            g.current_user = current_user
+            g.current_user_avatar = current_user.avatar_url()
+        else:
+            # Иначе проверяем, есть ли данные пользователя в сессии Flask
+            user_id = session.get('user_id')
+            if user_id:
+                # Если есть, загружаем пользователя из базы данных
+                g.current_user = User.query.get(user_id)
+                g.current_user_avatar = g.current_user.avatar_url()
+            else:
+                # Если и в сессии нет данных пользователя, устанавливаем текущего пользователя как None
+                g.current_user = None
+                g.current_user_avatar = url_for('static', filename='avatars/default-avatar.png')
 
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
